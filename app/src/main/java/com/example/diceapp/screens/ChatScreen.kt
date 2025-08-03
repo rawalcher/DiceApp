@@ -31,15 +31,20 @@ fun ChatScreen(chatViewModel: ChatViewModel) {
                 items(messages.reversed()) { message ->
                     val lines = message.split("\n")
                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                        lines.forEach { line ->
-                            val isResultLine = line.trim().matches(Regex("""^\d+$"""))
-                            Text(
-                                text = line,
-                                style = if (isResultLine)
-                                    MaterialTheme.typography.headlineMedium
-                                else
-                                    MaterialTheme.typography.bodyLarge
-                            )
+                        lines.forEachIndexed { index, line ->
+                            if (index == lines.lastIndex && line.matches(Regex("""= \d+"""))) {
+                                Text(
+                                    text = line,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Text(
+                                    text = line,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
                         }
                     }
                 }

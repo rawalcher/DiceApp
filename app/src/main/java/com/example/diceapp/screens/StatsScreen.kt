@@ -41,8 +41,9 @@ fun StatsScreen(
                                 val dieRoll = Random.nextInt(1, 21)
                                 val total = dieRoll + ability.modifier
                                 chatViewModel.postExternalRoll(
-                                    "\uD83C\uDFB2 ${ability.name}: Rolled 1d20 ($dieRoll) + ${ability.modifier}\n$total"
+                                    "\uD83C\uDFB2 ${ability.name} Check: Rolled 1d20 ($dieRoll) + ${ability.modifier}\n= $total"
                                 )
+
                             },
                             modifier = Modifier.weight(1f)
                         )
