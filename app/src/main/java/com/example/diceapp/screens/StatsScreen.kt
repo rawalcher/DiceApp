@@ -17,6 +17,8 @@ import com.example.diceapp.ViewModels.Ability
 import com.example.diceapp.ViewModels.CharacterViewModel
 import com.example.diceapp.ViewModels.ChatViewModel
 import kotlin.random.Random
+import androidx.compose.runtime.*
+import com.example.diceapp.components.*
 
 
 
@@ -26,6 +28,8 @@ fun StatsScreen(
     characterViewModel: CharacterViewModel
 ) {
     val abilities = characterViewModel.abilities
+    var messageMode by remember { mutableStateOf("Public") }
+    var rollMode by remember { mutableStateOf("Normal") }
 
     Scaffold{ padding ->
         Column(
@@ -35,6 +39,11 @@ fun StatsScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            MessageModeToggle(
+                selected = messageMode,
+                onSelect = { messageMode = it }
+            )
+
             abilities.chunked(2).forEach { pair ->
                 Row(
                     modifier = Modifier
@@ -46,12 +55,21 @@ fun StatsScreen(
                         StatCard(
                             ability = ability,
                             onRoll = {
-                                val dieRoll = Random.nextInt(1, 21)
-                                val total = dieRoll + ability.modifier
-                                chatViewModel.postExternalRoll(
-                                    "\uD83C\uDFB2 ${ability.name} Check: Rolled 1d20 ($dieRoll) + ${ability.modifier}\n= $total"
-                                )
+                                val roll1 = Random.nextInt(1, 21)
+                                val roll2 = Random.nextInt(1, 21)
 
+                                val (finalRoll, rollLabel) = when (rollMode) {
+                                    "Advantage" -> maxOf(roll1, roll2) to "($roll1, $roll2) Adv."
+                                    "Disadvantage" -> minOf(roll1, roll2) to "($roll1, $roll2) Dis."
+                                    else -> roll1 to "($roll1)"
+                                }
+
+                                val total = finalRoll + ability.modifier
+                                val prefix = if (messageMode == "To DM") "/ToDM " else ""
+
+                                chatViewModel.postExternalRoll(
+                                    "$prefix\uD83C\uDFB2 ${ability.name} Check: Rolled 1d20 $rollLabel + ${ability.modifier}\n= $total"
+                                )
                             },
                             modifier = Modifier.weight(1f)
                         )
@@ -61,6 +79,10 @@ fun StatsScreen(
                     }
                 }
             }
+            RollModeToggle(
+                selected = rollMode,
+                onSelect = { rollMode = it }
+            )
         }
     }
 }
