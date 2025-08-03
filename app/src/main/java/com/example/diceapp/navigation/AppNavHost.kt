@@ -30,7 +30,7 @@ fun AppNavHost(
                 composable("menu") {
                     MainMenuScreen(navController = navController)
                 }
-                composable("roll_stats") {
+                composable("stats") {
                     StatsScreen(
                         chatViewModel = chatViewModel,
                         characterViewModel = characterViewModel
