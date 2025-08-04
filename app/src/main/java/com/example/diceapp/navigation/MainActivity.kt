@@ -9,11 +9,16 @@ import androidx.navigation.compose.rememberNavController
 import com.example.diceapp.ViewModels.CharacterViewModel
 import com.example.diceapp.ViewModels.ChatViewModel
 import com.example.diceapp.ui.theme.DiceAppTheme
+import com.example.diceapp.ViewModels.DiceRollViewModel
+import com.example.diceapp.navigation.AppNavHost
+
 
 class MainActivity : ComponentActivity() {
 
     private val chatViewModel: ChatViewModel by viewModels()
     private val characterViewModel: CharacterViewModel by viewModels()
+    private val diceRollViewModel: DiceRollViewModel by viewModels()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,7 +29,8 @@ class MainActivity : ComponentActivity() {
                     AppNavHost(
                         navController = navController,
                         chatViewModel = chatViewModel,
-                        characterViewModel = characterViewModel
+                        characterViewModel = characterViewModel,
+                        diceRollViewModel = diceRollViewModel
                     )
                 }
             }

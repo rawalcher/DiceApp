@@ -1,37 +1,34 @@
 package com.example.diceapp.screens
 
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.diceapp.ViewModels.Ability
 import com.example.diceapp.ViewModels.CharacterViewModel
 import com.example.diceapp.ViewModels.ChatViewModel
-import kotlin.random.Random
-import androidx.compose.runtime.*
-import com.example.diceapp.components.*
-
-
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun StatsScreen(
     chatViewModel: ChatViewModel,
-    characterViewModel: CharacterViewModel
+    characterViewModel: CharacterViewModel,
+    navController: NavController
 ) {
     val abilities = characterViewModel.abilities
-    var messageMode by remember { mutableStateOf("Public") }
-    var rollMode by remember { mutableStateOf("Normal") }
 
-    Scaffold{ padding ->
+    Scaffold { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -39,11 +36,6 @@ fun StatsScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            MessageModeToggle(
-                selected = messageMode,
-                onSelect = { messageMode = it }
-            )
-
             abilities.chunked(2).forEach { pair ->
                 Row(
                     modifier = Modifier
@@ -55,21 +47,8 @@ fun StatsScreen(
                         StatCard(
                             ability = ability,
                             onRoll = {
-                                val roll1 = Random.nextInt(1, 21)
-                                val roll2 = Random.nextInt(1, 21)
-
-                                val (finalRoll, rollLabel) = when (rollMode) {
-                                    "Advantage" -> maxOf(roll1, roll2) to "($roll1, $roll2) Adv."
-                                    "Disadvantage" -> minOf(roll1, roll2) to "($roll1, $roll2) Dis."
-                                    else -> roll1 to "($roll1)"
-                                }
-
-                                val total = finalRoll + ability.modifier
-                                val prefix = if (messageMode == "To DM") "/ToDM " else ""
-
-                                chatViewModel.postExternalRoll(
-                                    "$prefix\uD83C\uDFB2 ${ability.name} Check: Rolled 1d20 $rollLabel + ${ability.modifier}\n= $total"
-                                )
+                                val labelEncoded = URLEncoder.encode(ability.name, StandardCharsets.UTF_8.toString())
+                                navController.navigate("dice_roll/$labelEncoded/${ability.modifier}/0")
                             },
                             modifier = Modifier.weight(1f)
                         )
@@ -79,14 +58,9 @@ fun StatsScreen(
                     }
                 }
             }
-            RollModeToggle(
-                selected = rollMode,
-                onSelect = { rollMode = it }
-            )
         }
     }
 }
-
 
 @Composable
 fun StatCard(ability: Ability, onRoll: () -> Unit, modifier: Modifier = Modifier) {
@@ -97,7 +71,7 @@ fun StatCard(ability: Ability, onRoll: () -> Unit, modifier: Modifier = Modifier
         modifier = modifier
             .fillMaxSize()
             .clip(shape)
-            .border(2.dp, Color.White, shape) // white border with rounded corners
+            .border(2.dp, Color.White, shape)
             .clickable { onRoll() },
         shape = shape,
         colors = CardDefaults.cardColors(
@@ -133,4 +107,3 @@ fun StatCard(ability: Ability, onRoll: () -> Unit, modifier: Modifier = Modifier
         }
     }
 }
-
