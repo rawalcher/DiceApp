@@ -2,6 +2,7 @@ package com.example.diceapp.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -12,15 +13,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.diceapp.ViewModels.CharacterViewModel
 import com.example.diceapp.ViewModels.ChatViewModel
+import com.example.diceapp.ViewModels.DiceRollViewModel
 import com.example.diceapp.screens.ChatScreen
 import com.example.diceapp.screens.DiceRollScreen
 import com.example.diceapp.screens.MainMenuScreen
 import com.example.diceapp.screens.StatsScreen
-import androidx.compose.foundation.layout.padding
-import com.example.diceapp.ViewModels.DiceRollViewModel
-
-
-
+import com.example.diceapp.screens.SavingThrowsScreen
 
 @Composable
 fun AppNavHost(
@@ -33,7 +31,7 @@ fun AppNavHost(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding) // Apply scaffold padding here
+                .padding(padding)
         ) {
             NavHost(
                 navController = navController,
@@ -53,25 +51,37 @@ fun AppNavHost(
                 composable("chat") {
                     ChatScreen(chatViewModel = chatViewModel)
                 }
+                composable("saving_throws") {
+                    SavingThrowsScreen(
+                        navController = navController,
+                        characterViewModel = characterViewModel
+                    )
+                }
                 composable(
-                    route = "dice_roll/{label}/{modifier}/{proficiencyBonus}",
+                    route = "dice_roll/{label}/{modifier}/{proficiencyBonus}/{type}",
                     arguments = listOf(
                         navArgument("label") { type = NavType.StringType },
                         navArgument("modifier") { type = NavType.IntType },
                         navArgument("proficiencyBonus") {
                             type = NavType.IntType
                             defaultValue = 0
+                        },
+                        navArgument("type") {
+                            type = NavType.StringType
+                            defaultValue = "Check"
                         }
                     )
                 ) { backStackEntry ->
                     val label = backStackEntry.arguments?.getString("label") ?: "Roll"
                     val modifier = backStackEntry.arguments?.getInt("modifier") ?: 0
                     val proficiencyBonus = backStackEntry.arguments?.getInt("proficiencyBonus") ?: 0
+                    val type = backStackEntry.arguments?.getString("type") ?: "Check"
 
                     DiceRollScreen(
                         rollLabel = label,
                         modifier = modifier,
                         proficiencyBonus = proficiencyBonus,
+                        type = type,
                         navController = navController,
                         chatViewModel = chatViewModel,
                         diceRollViewModel = diceRollViewModel

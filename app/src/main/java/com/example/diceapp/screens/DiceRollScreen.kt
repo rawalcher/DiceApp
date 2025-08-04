@@ -3,7 +3,7 @@ package com.example.diceapp.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,6 +19,7 @@ fun DiceRollScreen(
     rollLabel: String,
     modifier: Int,
     proficiencyBonus: Int? = null,
+    type: String,
     navController: NavController,
     chatViewModel: ChatViewModel,
     diceRollViewModel: DiceRollViewModel
@@ -27,7 +28,7 @@ fun DiceRollScreen(
         topBar = {
             MessageModeToggle(
                 selected = diceRollViewModel.messageMode,
-                onSelect = { diceRollViewModel.messageMode = it }
+                onSelect = { diceRollViewModel.messageMode = it },
             )
         },
         bottomBar = {
@@ -51,34 +52,33 @@ fun DiceRollScreen(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Modifier: ${if (modifier >= 0) "+" else ""}$modifier",
+                text = buildString {
+                    append("Modifier: $modifier")
+                    if (proficiencyBonus != null && proficiencyBonus > 0) {
+                        append(" | Proficiency: $proficiencyBonus")
+                    }
+                },
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            proficiencyBonus?.takeIf { it > 0 }?.let {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Proficiency Bonus: +$it",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
                     val message = diceRollViewModel.rollAndFormatMessage(
                         label = rollLabel,
                         modifier = modifier,
-                        proficiencyBonus = proficiencyBonus
+                        proficiencyBonus = proficiencyBonus,
+                        type = type
                     )
                     chatViewModel.postExternalRoll(message)
-                    navController.navigate("chat") { popUpTo("menu") { inclusive = false } }
+                    navController.navigate("chat") {
+                        popUpTo("menu") { inclusive = false }
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

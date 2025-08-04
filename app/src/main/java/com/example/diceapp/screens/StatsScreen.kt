@@ -48,7 +48,7 @@ fun StatsScreen(
                             ability = ability,
                             onRoll = {
                                 val labelEncoded = URLEncoder.encode(ability.name, StandardCharsets.UTF_8.toString())
-                                navController.navigate("dice_roll/$labelEncoded/${ability.modifier}/0")
+                                navController.navigate("dice_roll/$labelEncoded/${ability.modifier}/0/Check")
                             },
                             modifier = Modifier.weight(1f)
                         )
