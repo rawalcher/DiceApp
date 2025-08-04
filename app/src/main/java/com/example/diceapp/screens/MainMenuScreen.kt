@@ -30,6 +30,9 @@ fun MainMenuScreen(navController: NavController) {
             Button(onClick = { navController.navigate("saving_throws") }) {
                 Text("Saving Throws")
             }
+            Button(onClick = { navController.navigate("skills") }) {
+                Text("Skills")
+            }
             Button(onClick = { navController.navigate("chat") }) {
                 Text("Chat")
             }

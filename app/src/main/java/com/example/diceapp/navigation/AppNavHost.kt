@@ -19,6 +19,8 @@ import com.example.diceapp.screens.DiceRollScreen
 import com.example.diceapp.screens.MainMenuScreen
 import com.example.diceapp.screens.StatsScreen
 import com.example.diceapp.screens.SavingThrowsScreen
+import com.example.diceapp.screens.SkillsScreen
+
 
 @Composable
 fun AppNavHost(
@@ -57,6 +59,13 @@ fun AppNavHost(
                         characterViewModel = characterViewModel
                     )
                 }
+                composable("skills") {
+                    SkillsScreen(
+                        navController = navController,
+                        characterViewModel = characterViewModel
+                    )
+                }
+
                 composable(
                     route = "dice_roll/{label}/{modifier}/{proficiencyBonus}/{type}",
                     arguments = listOf(

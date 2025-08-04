@@ -10,7 +10,7 @@ import com.example.diceapp.ViewModels.CharacterViewModel
 import com.example.diceapp.ViewModels.ChatViewModel
 import com.example.diceapp.ui.theme.DiceAppTheme
 import com.example.diceapp.ViewModels.DiceRollViewModel
-import com.example.diceapp.navigation.AppNavHost
+
 
 
 class MainActivity : ComponentActivity() {
