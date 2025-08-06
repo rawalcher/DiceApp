@@ -20,6 +20,7 @@ import com.example.diceapp.screens.MainMenuScreen
 import com.example.diceapp.screens.StatsScreen
 import com.example.diceapp.screens.SavingThrowsScreen
 import com.example.diceapp.screens.SkillsScreen
+import com.example.diceapp.screens.CombatStatsScreen
 
 
 @Composable
@@ -45,7 +46,6 @@ fun AppNavHost(
                 }
                 composable("stats") {
                     StatsScreen(
-                        chatViewModel = chatViewModel,
                         characterViewModel = characterViewModel,
                         navController = navController
                     )
@@ -65,6 +65,12 @@ fun AppNavHost(
                         characterViewModel = characterViewModel
                     )
                 }
+                composable("combat_stats") {
+                    CombatStatsScreen(
+                        characterViewModel = characterViewModel
+                    )
+                }
+
 
                 composable(
                     route = "dice_roll/{label}/{modifier}/{proficiencyBonus}/{type}",

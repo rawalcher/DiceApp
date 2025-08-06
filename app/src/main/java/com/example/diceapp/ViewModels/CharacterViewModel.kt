@@ -1,5 +1,6 @@
 package com.example.diceapp.ViewModels
 
+import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 
 data class Ability(
@@ -55,4 +56,48 @@ class CharacterViewModel : ViewModel() {
         val profMod = if (skill.isProficient) proficiencyBonus else 0
         skill.copy(modifier = abilityMod + profMod)
     }
+    val armorClass: Int = 13
+    val initiative: Int = abilities.find { it.name == "Dexterity" }?.modifier ?: 0
+    val speed: Int = 30
+
+    var currentHP by mutableStateOf(20)
+    val maxHP: Int = 20
+    var tempHP by mutableStateOf(0)
+
+    val hitDiceTotal: Int = 3
+    val hitDieType: Int = 6
+
+    var deathSaveSuccesses by mutableStateOf(0)
+    var deathSaveFailures by mutableStateOf(0)
+
+    val passivePerception: Int
+        get() {
+            val wisdomMod = abilities.find { it.name == "Wisdom" }?.modifier ?: 0
+            val isProficient = skills.find { it.name == "Perception" }?.isProficient ?: false
+            return 10 + wisdomMod + if (isProficient) proficiencyBonus else 0
+        }
+
+    fun resetDeathSaves() {
+        deathSaveSuccesses = 0
+        deathSaveFailures = 0
+    }
+
+    fun incrementDeathSaveSuccess() {
+        if (deathSaveSuccesses < 3) deathSaveSuccesses++
+    }
+
+    fun incrementDeathSaveFailure() {
+        if (deathSaveFailures < 3) deathSaveFailures++
+    }
+    fun shortRest() {
+        tempHP = 0
+        resetDeathSaves()
+    }
+
+    fun longRest() {
+        currentHP = maxHP
+        tempHP = 0
+        resetDeathSaves()
+    }
+
 }

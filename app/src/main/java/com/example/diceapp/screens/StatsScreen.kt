@@ -16,13 +16,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.diceapp.ViewModels.Ability
 import com.example.diceapp.ViewModels.CharacterViewModel
-import com.example.diceapp.ViewModels.ChatViewModel
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 @Composable
 fun StatsScreen(
-    chatViewModel: ChatViewModel,
     characterViewModel: CharacterViewModel,
     navController: NavController
 ) {

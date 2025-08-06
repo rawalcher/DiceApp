@@ -10,8 +10,7 @@ import androidx.navigation.NavController
 
 @Composable
 fun MainMenuScreen(navController: NavController) {
-    Scaffold(
-    ) { paddingValues ->
+    Scaffold{ paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -33,10 +32,12 @@ fun MainMenuScreen(navController: NavController) {
             Button(onClick = { navController.navigate("skills") }) {
                 Text("Skills")
             }
+            Button(onClick = { navController.navigate("combat_stats") }) {
+                Text("Combat Stats")
+            }
             Button(onClick = { navController.navigate("chat") }) {
                 Text("Chat")
             }
-
         }
     }
 }
