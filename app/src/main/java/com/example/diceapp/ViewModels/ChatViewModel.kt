@@ -27,7 +27,7 @@ class ChatViewModel : ViewModel() {
         addMessage(description)
     }
 
-    private fun addMessage(message: String) {
+    fun addMessage(message: String) {
         _messages.value = _messages.value + message
     }
 }

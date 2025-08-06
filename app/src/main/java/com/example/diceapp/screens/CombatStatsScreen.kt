@@ -13,13 +13,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.diceapp.ViewModels.CharacterViewModel
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import com.example.diceapp.ViewModels.ChatViewModel
+import androidx.compose.runtime.getValue
 
 @Composable
-fun CombatStatsScreen(characterViewModel: CharacterViewModel) {
+fun CombatStatsScreen(characterViewModel: CharacterViewModel, chatViewModel: ChatViewModel) {
     val shape = RoundedCornerShape(12.dp)
     val borderColor = Color.White
     val cardColor = Color.Black
     val textColor = Color.White
+    val successes by characterViewModel.deathSaveSuccesses
+    val failures by characterViewModel.deathSaveFailures
+
 
     Scaffold { padding ->
         Column(
@@ -33,9 +39,10 @@ fun CombatStatsScreen(characterViewModel: CharacterViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                StatCard("Proficiency Bonus", "+${characterViewModel.proficiencyBonus}", shape, borderColor, cardColor, textColor, Modifier.weight(1f))
+                StatCard("Proficiency Bonus", "${characterViewModel.proficiencyBonus}", shape, borderColor, cardColor, textColor, Modifier.weight(1f))
                 StatCard("Passive Perception", characterViewModel.passivePerception.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
             }
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -45,49 +52,67 @@ fun CombatStatsScreen(characterViewModel: CharacterViewModel) {
                 StatCard("Speed", characterViewModel.speed.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
             }
 
-            StatCard(
-                title = "Current HP",
-                value = characterViewModel.currentHP.toString(),
-                shape = shape,
-                borderColor = borderColor,
-                cardColor = cardColor,
-                textColor = textColor
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                StatCard("Current HP", characterViewModel.currentHP.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
+                StatCard("Temp HP", characterViewModel.tempHP.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 StatCard("Initiative", characterViewModel.initiative.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
-                StatCard("Temp HP", characterViewModel.tempHP.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
+                StatCard("Inspiration", if (characterViewModel.inspiration) "Yes" else "No", shape, borderColor, cardColor, textColor, Modifier.weight(1f))
             }
 
-            StatCard(
-                title = "Hit Dice",
-                value = "${characterViewModel.hitDiceTotal} (d${characterViewModel.hitDieType})",
-                shape = shape,
-                borderColor = borderColor,
-                cardColor = cardColor,
-                textColor = textColor
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                StatCard(
+                    title = "Hit Dice",
+                    value = "${characterViewModel.hitDiceTotal} (d${characterViewModel.hitDieType})",
+                    shape = shape,
+                    borderColor = borderColor,
+                    cardColor = cardColor,
+                    textColor = textColor,
+                    modifier = Modifier.weight(1f)
+                )
 
-            DeathSavesSection(
-                successes = characterViewModel.deathSaveSuccesses,
-                failures = characterViewModel.deathSaveFailures
-            )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .border(BorderStroke(2.dp, borderColor), shape)
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    DeathSavesSection(
+                        successes = successes,
+                        failures = failures,
+                        onClick = { characterViewModel.rollDeathSave(chatViewModel) }
+                    )
+                }
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Button(onClick = { characterViewModel.shortRest() },) { Text("Short Rest") }
-                Button(onClick = { characterViewModel.longRest() },) { Text("Long Rest") }
+                Button(onClick = { characterViewModel.shortRest() }) {
+                    Text("Short Rest")
+                }
+                Button(onClick = { characterViewModel.longRest() }) {
+                    Text("Long Rest")
+                }
             }
         }
     }
 }
-
 
 @Composable
 private fun StatCard(
@@ -119,25 +144,29 @@ private fun StatCard(
         }
     }
 }
+
 @Composable
 fun DeathSavesSection(
     successes: Int,
-    failures: Int
+    failures: Int,
+    onClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Death Saves", fontSize = 18.sp, color = Color.White)
+        Text("DEATH SAVES", fontSize = 12.sp, color = Color.White)
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Successes", fontSize = 14.sp, color = Color.White)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("✔", fontSize = 12.sp, color = Color.Green)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     repeat(3) { index ->
                         SaveCircle(
                             filled = index < successes,
@@ -148,8 +177,8 @@ fun DeathSavesSection(
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Failures", fontSize = 14.sp, color = Color.White)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("✘", fontSize = 12.sp, color = Color.Red)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     repeat(3) { index ->
                         SaveCircle(
                             filled = index < failures,
@@ -162,14 +191,21 @@ fun DeathSavesSection(
     }
 }
 
+
 @Composable
 fun SaveCircle(filled: Boolean, filledColor: Color) {
     Box(
         modifier = Modifier
-            .size(24.dp)
-            .border(2.dp, Color.White, shape = RoundedCornerShape(50))
-            .let {
-                if (filled) it.background(filledColor, shape = RoundedCornerShape(50)) else it
-            }
+            .size(16.dp)
+            .background(
+                color = if (filled) filledColor else Color.Transparent,
+                shape = RoundedCornerShape(50)
+            )
+            .border(
+                width = 2.dp,
+                color = Color.White,
+                shape = RoundedCornerShape(50)
+            )
     )
 }
+

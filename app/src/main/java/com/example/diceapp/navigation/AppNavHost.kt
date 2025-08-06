@@ -67,7 +67,8 @@ fun AppNavHost(
                 }
                 composable("combat_stats") {
                     CombatStatsScreen(
-                        characterViewModel = characterViewModel
+                        characterViewModel = characterViewModel,
+                        chatViewModel = chatViewModel
                     )
                 }
 

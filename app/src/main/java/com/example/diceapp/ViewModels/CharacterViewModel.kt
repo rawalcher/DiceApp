@@ -2,6 +2,9 @@ package com.example.diceapp.ViewModels
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
+import kotlin.random.Random
+
+
 
 data class Ability(
     val name: String,
@@ -58,6 +61,8 @@ class CharacterViewModel : ViewModel() {
     }
     val armorClass: Int = 13
     val initiative: Int = abilities.find { it.name == "Dexterity" }?.modifier ?: 0
+    var inspiration by mutableStateOf(false)
+
     val speed: Int = 30
 
     var currentHP by mutableStateOf(20)
@@ -67,8 +72,13 @@ class CharacterViewModel : ViewModel() {
     val hitDiceTotal: Int = 3
     val hitDieType: Int = 6
 
-    var deathSaveSuccesses by mutableStateOf(0)
-    var deathSaveFailures by mutableStateOf(0)
+    private val _deathSaveSuccesses = mutableStateOf(0)
+    val deathSaveSuccesses: State<Int> get() = _deathSaveSuccesses
+
+    private val _deathSaveFailures = mutableStateOf(0)
+    val deathSaveFailures: State<Int> get() = _deathSaveFailures
+
+
 
     val passivePerception: Int
         get() {
@@ -77,18 +87,23 @@ class CharacterViewModel : ViewModel() {
             return 10 + wisdomMod + if (isProficient) proficiencyBonus else 0
         }
 
-    fun resetDeathSaves() {
-        deathSaveSuccesses = 0
-        deathSaveFailures = 0
-    }
-
     fun incrementDeathSaveSuccess() {
-        if (deathSaveSuccesses < 3) deathSaveSuccesses++
+        if (_deathSaveSuccesses.value < 3) {
+            _deathSaveSuccesses.value++
+        }
     }
 
     fun incrementDeathSaveFailure() {
-        if (deathSaveFailures < 3) deathSaveFailures++
+        if (_deathSaveFailures.value < 3) {
+            _deathSaveFailures.value++
+        }
     }
+
+    fun resetDeathSaves() {
+        _deathSaveSuccesses.value = 0
+        _deathSaveFailures.value = 0
+    }
+
     fun shortRest() {
         tempHP = 0
         resetDeathSaves()
@@ -100,4 +115,19 @@ class CharacterViewModel : ViewModel() {
         resetDeathSaves()
     }
 
+    fun rollDeathSave(chatViewModel: ChatViewModel) {
+        val roll = (1..20).random()
+        val message = "/ToDM 🎲 Death Save: Rolled 1d20 = $roll"
+        chatViewModel.addMessage(message)
+
+        if (roll == 1) {
+            _deathSaveFailures.value = (_deathSaveFailures.value + 2).coerceAtMost(3)
+        } else if (roll < 10) {
+            _deathSaveFailures.value = (_deathSaveFailures.value + 1).coerceAtMost(3)
+        } else if (roll == 20) {
+            _deathSaveSuccesses.value = 3
+        } else {
+            _deathSaveSuccesses.value = (_deathSaveSuccesses.value + 1).coerceAtMost(3)
+        }
+    }
 }
