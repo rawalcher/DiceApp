@@ -21,6 +21,7 @@ import com.example.diceapp.screens.StatsScreen
 import com.example.diceapp.screens.SavingThrowsScreen
 import com.example.diceapp.screens.SkillsScreen
 import com.example.diceapp.screens.CombatStatsScreen
+import com.example.diceapp.screens.LoginScreen
 
 
 @Composable
@@ -69,6 +70,15 @@ fun AppNavHost(
                     CombatStatsScreen(
                         characterViewModel = characterViewModel,
                         chatViewModel = chatViewModel
+                    )
+                }
+                composable("login") {
+                    LoginScreen(
+                        onLoggedIn = {
+                            navController.navigate("menu") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
                     )
                 }
 
