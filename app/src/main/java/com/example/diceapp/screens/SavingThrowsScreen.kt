@@ -12,8 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.diceapp.ViewModels.Ability
-import com.example.diceapp.ViewModels.CharacterViewModel
+import com.example.diceapp.viewModels.Ability
+import com.example.diceapp.viewModels.CharacterViewModel
 
 @Composable
 fun SavingThrowsScreen(

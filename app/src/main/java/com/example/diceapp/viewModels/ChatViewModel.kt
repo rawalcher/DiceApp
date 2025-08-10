@@ -1,4 +1,4 @@
-package com.example.diceapp.ViewModels
+package com.example.diceapp.viewModels
 
 import androidx.lifecycle.ViewModel
 import com.example.diceapp.util.parseAndRollDice

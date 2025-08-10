@@ -11,10 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.diceapp.ViewModels.CharacterViewModel
+import com.example.diceapp.viewModels.CharacterViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import com.example.diceapp.ViewModels.ChatViewModel
+import com.example.diceapp.viewModels.ChatViewModel
 import androidx.compose.runtime.getValue
 
 @Composable

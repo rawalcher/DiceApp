@@ -9,10 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.diceapp.ViewModels.ChatViewModel
-import com.example.diceapp.ViewModels.DiceRollViewModel
-import com.example.diceapp.ViewModels.DiceRollViewModel.MessageMode
-import com.example.diceapp.ViewModels.DiceRollViewModel.RollMode
+import com.example.diceapp.viewModels.ChatViewModel
+import com.example.diceapp.viewModels.DiceRollViewModel
+import com.example.diceapp.viewModels.DiceRollViewModel.MessageMode
+import com.example.diceapp.viewModels.DiceRollViewModel.RollMode
 
 @Composable
 fun DiceRollScreen(

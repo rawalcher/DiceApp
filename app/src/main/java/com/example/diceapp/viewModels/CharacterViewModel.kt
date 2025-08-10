@@ -1,10 +1,7 @@
-package com.example.diceapp.ViewModels
+package com.example.diceapp.viewModels
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
-import kotlin.random.Random
-
-
 
 data class Ability(
     val name: String,
@@ -77,8 +74,6 @@ class CharacterViewModel : ViewModel() {
 
     private val _deathSaveFailures = mutableStateOf(0)
     val deathSaveFailures: State<Int> get() = _deathSaveFailures
-
-
 
     val passivePerception: Int
         get() {

@@ -11,9 +11,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.diceapp.ViewModels.CharacterViewModel
-import com.example.diceapp.ViewModels.ChatViewModel
-import com.example.diceapp.ViewModels.DiceRollViewModel
+import com.example.diceapp.viewModels.CharacterViewModel
+import com.example.diceapp.viewModels.ChatViewModel
+import com.example.diceapp.viewModels.DiceRollViewModel
 import com.example.diceapp.screens.ChatScreen
 import com.example.diceapp.screens.DiceRollScreen
 import com.example.diceapp.screens.MainMenuScreen
@@ -22,14 +22,16 @@ import com.example.diceapp.screens.SavingThrowsScreen
 import com.example.diceapp.screens.SkillsScreen
 import com.example.diceapp.screens.CombatStatsScreen
 import com.example.diceapp.screens.LoginScreen
-
+import com.example.diceapp.viewModels.CampaignViewModel
+import com.example.diceapp.screens.CampaignsScreen
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     chatViewModel: ChatViewModel,
     characterViewModel: CharacterViewModel,
-    diceRollViewModel: DiceRollViewModel
+    diceRollViewModel: DiceRollViewModel,
+    campaignViewModel: CampaignViewModel
 ) {
     Scaffold { padding ->
         Box(
@@ -70,6 +72,12 @@ fun AppNavHost(
                     CombatStatsScreen(
                         characterViewModel = characterViewModel,
                         chatViewModel = chatViewModel
+                    )
+                }
+                composable("campaigns") {
+                    CampaignsScreen(
+                        navController = navController,
+                        campaignViewModel = campaignViewModel
                     )
                 }
                 composable("login") {

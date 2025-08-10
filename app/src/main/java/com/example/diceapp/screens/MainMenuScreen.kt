@@ -23,6 +23,9 @@ fun MainMenuScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            Button(onClick = { navController.navigate("campaigns") }) {
+                Text("Campaigns")
+            }
             Button(onClick = { navController.navigate("stats") }) {
                 Text("Stats")
             }
