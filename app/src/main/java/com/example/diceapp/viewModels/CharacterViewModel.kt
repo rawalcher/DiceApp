@@ -33,38 +33,44 @@ class CharacterViewModel : ViewModel() {
     )
 
     val skills: List<Skill> = listOf(
-        Skill("Acrobatics", "Dexterity", isProficient = true),
-        Skill("Animal Handling", "Wisdom", isProficient = false),
-        Skill("Arcana", "Intelligence", isProficient = false),
-        Skill("Athletics", "Strength", isProficient = true),
-        Skill("Deception", "Charisma", isProficient = false),
-        Skill("History", "Intelligence", isProficient = true),
-        Skill("Insight", "Wisdom", isProficient = false),
-        Skill("Intimidation", "Charisma", isProficient = false),
-        Skill("Investigation", "Intelligence", isProficient = true),
-        Skill("Medicine", "Wisdom", isProficient = false),
-        Skill("Nature", "Intelligence", isProficient = false),
-        Skill("Perception", "Wisdom", isProficient = true),
-        Skill("Performance", "Charisma", isProficient = false),
-        Skill("Persuasion", "Charisma", isProficient = true),
-        Skill("Religion", "Intelligence", isProficient = false),
-        Skill("Sleight of Hand", "Dexterity", isProficient = false),
-        Skill("Stealth", "Dexterity", isProficient = true),
-        Skill("Survival", "Wisdom", isProficient = false)
+        Skill("Acrobatics", "Dexterity", true),
+        Skill("Animal Handling", "Wisdom", false),
+        Skill("Arcana", "Intelligence", false),
+        Skill("Athletics", "Strength", true),
+        Skill("Deception", "Charisma", false),
+        Skill("History", "Intelligence", true),
+        Skill("Insight", "Wisdom", false),
+        Skill("Intimidation", "Charisma", false),
+        Skill("Investigation", "Intelligence", true),
+        Skill("Medicine", "Wisdom", false),
+        Skill("Nature", "Intelligence", false),
+        Skill("Perception", "Wisdom", true),
+        Skill("Performance", "Charisma", false),
+        Skill("Persuasion", "Charisma", true),
+        Skill("Religion", "Intelligence", false),
+        Skill("Sleight of Hand", "Dexterity", false),
+        Skill("Stealth", "Dexterity", true),
+        Skill("Survival", "Wisdom", false)
     ).map { skill ->
         val abilityMod = abilities.find { it.name == skill.abilityName }?.modifier ?: 0
         val profMod = if (skill.isProficient) proficiencyBonus else 0
         skill.copy(modifier = abilityMod + profMod)
     }
 
-    val armorClass: Int = 13
+    var armorClass by mutableStateOf(13)
     val initiative: Int = abilities.find { it.name == "Dexterity" }?.modifier ?: 0
     var inspiration by mutableStateOf(false)
 
-    val speed: Int = 30
+    var speed by mutableStateOf(30)
 
     var currentHP by mutableStateOf(20)
-    val maxHP: Int = 20
+    var maxHP by mutableStateOf(20)
+
+    fun updateMaxHP(newValue: Int) {
+        maxHP = newValue
+        currentHP = currentHP.coerceAtMost(maxHP)
+    }
+
     var tempHP by mutableStateOf(0)
 
     val hitDiceTotal: Int = 3
@@ -82,19 +88,23 @@ class CharacterViewModel : ViewModel() {
             val isProficient = skills.find { it.name == "Perception" }?.isProficient ?: false
             return 10 + wisdomMod + if (isProficient) proficiencyBonus else 0
         }
+
     fun resetDeathSaves() {
         _deathSaveSuccesses.value = 0
         _deathSaveFailures.value = 0
     }
+
     fun shortRest() {
         tempHP = 0
         resetDeathSaves()
     }
+
     fun longRest() {
         currentHP = maxHP
         tempHP = 0
         resetDeathSaves()
     }
+
     fun applyDeathSaveResult(roll: Int, chatViewModel: ChatViewModel) {
         val message = "/ToDM 🎲 Death Save: Rolled 1d20 = $roll"
         chatViewModel.addMessage(message)

@@ -7,8 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ChatViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel
+import com.example.diceapp.ui.components.EditDialog
 
 @Composable
 fun CombatStatsScreen(
@@ -31,6 +31,8 @@ fun CombatStatsScreen(
     val successes by characterViewModel.deathSaveSuccesses
     val failures by characterViewModel.deathSaveFailures
 
+    var showEditDialogFor by remember { mutableStateOf<String?>(null) }
+
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -39,28 +41,57 @@ fun CombatStatsScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
+            // Row 1
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 StatCard("Proficiency Bonus", "${characterViewModel.proficiencyBonus}", shape, borderColor, cardColor, textColor, Modifier.weight(1f))
                 StatCard("Passive Perception", characterViewModel.passivePerception.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
             }
 
+            // Row 2
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                StatCard("Armor Class", characterViewModel.armorClass.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
-                StatCard("Max HP", characterViewModel.maxHP.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
-                StatCard("Speed", characterViewModel.speed.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
+                StatCard(
+                    "Armor Class",
+                    characterViewModel.armorClass.toString(),
+                    shape, borderColor, cardColor, textColor,
+                    Modifier.weight(1f).clickable { showEditDialogFor = "AC" }
+                )
+                StatCard(
+                    "Max HP",
+                    characterViewModel.maxHP.toString(),
+                    shape, borderColor, cardColor, textColor,
+                    Modifier.weight(1f).clickable { showEditDialogFor = "MaxHP" }
+                )
+                StatCard(
+                    "Speed",
+                    characterViewModel.speed.toString(),
+                    shape, borderColor, cardColor, textColor,
+                    Modifier.weight(1f).clickable { showEditDialogFor = "Speed" }
+                )
             }
 
+            // Row 3
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                StatCard("Current HP", characterViewModel.currentHP.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
-                StatCard("Temp HP", characterViewModel.tempHP.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
+                StatCard(
+                    "Current HP",
+                    characterViewModel.currentHP.toString(),
+                    shape, borderColor, cardColor, textColor,
+                    Modifier.weight(1f).clickable { showEditDialogFor = "CurrentHP" }
+                )
+                StatCard(
+                    "Temp HP",
+                    characterViewModel.tempHP.toString(),
+                    shape, borderColor, cardColor, textColor,
+                    Modifier.weight(1f).clickable { showEditDialogFor = "TempHP" }
+                )
             }
 
+            // Row 4
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 StatCard("Initiative", characterViewModel.initiative.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
                 StatCard("Inspiration", if (characterViewModel.inspiration) "Yes" else "No", shape, borderColor, cardColor, textColor, Modifier.weight(1f))
             }
 
+            // Row 5
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 StatCard(
                     title = "Hit Dice",
@@ -90,6 +121,7 @@ fun CombatStatsScreen(
                 }
             }
 
+            // Rest Buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -104,6 +136,60 @@ fun CombatStatsScreen(
                 }
             }
         }
+    }
+
+    // Handle dialog rendering
+    when (showEditDialogFor) {
+        "CurrentHP" -> EditDialog(
+            fieldName = "Current HP",
+            initialValue = characterViewModel.currentHP,
+            valueRange = 0..characterViewModel.maxHP,
+            onDismiss = { showEditDialogFor = null },
+            onApply = {
+                characterViewModel.currentHP = it
+                showEditDialogFor = null
+            }
+        )
+        "MaxHP" -> EditDialog(
+            fieldName = "Max HP",
+            initialValue = characterViewModel.maxHP,
+            valueRange = 0..999,
+            onDismiss = { showEditDialogFor = null },
+            onApply = {
+                characterViewModel.updateMaxHP(it)
+                showEditDialogFor = null
+            }
+        )
+        "AC" -> EditDialog(
+            fieldName = "Armor Class",
+            initialValue = characterViewModel.armorClass,
+            valueRange = 0..50,
+            onDismiss = { showEditDialogFor = null },
+            onApply = {
+                characterViewModel.armorClass = it
+                showEditDialogFor = null
+            }
+        )
+        "Speed" -> EditDialog(
+            fieldName = "Speed",
+            initialValue = characterViewModel.speed,
+            valueRange = 0..120,
+            onDismiss = { showEditDialogFor = null },
+            onApply = {
+                characterViewModel.speed = it
+                showEditDialogFor = null
+            }
+        )
+        "TempHP" -> EditDialog(
+            fieldName = "Temp HP",
+            initialValue = characterViewModel.tempHP,
+            valueRange = 0..999,
+            onDismiss = { showEditDialogFor = null },
+            onApply = {
+                characterViewModel.tempHP = it
+                showEditDialogFor = null
+            }
+        )
     }
 }
 
