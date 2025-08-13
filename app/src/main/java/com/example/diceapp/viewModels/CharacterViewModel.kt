@@ -56,6 +56,7 @@ class CharacterViewModel : ViewModel() {
         val profMod = if (skill.isProficient) proficiencyBonus else 0
         skill.copy(modifier = abilityMod + profMod)
     }
+
     val armorClass: Int = 13
     val initiative: Int = abilities.find { it.name == "Dexterity" }?.modifier ?: 0
     var inspiration by mutableStateOf(false)
@@ -81,48 +82,36 @@ class CharacterViewModel : ViewModel() {
             val isProficient = skills.find { it.name == "Perception" }?.isProficient ?: false
             return 10 + wisdomMod + if (isProficient) proficiencyBonus else 0
         }
-
-    fun incrementDeathSaveSuccess() {
-        if (_deathSaveSuccesses.value < 3) {
-            _deathSaveSuccesses.value++
-        }
-    }
-
-    fun incrementDeathSaveFailure() {
-        if (_deathSaveFailures.value < 3) {
-            _deathSaveFailures.value++
-        }
-    }
-
     fun resetDeathSaves() {
         _deathSaveSuccesses.value = 0
         _deathSaveFailures.value = 0
     }
-
     fun shortRest() {
         tempHP = 0
         resetDeathSaves()
     }
-
     fun longRest() {
         currentHP = maxHP
         tempHP = 0
         resetDeathSaves()
     }
-
-    fun rollDeathSave(chatViewModel: ChatViewModel) {
-        val roll = (1..20).random()
+    fun applyDeathSaveResult(roll: Int, chatViewModel: ChatViewModel) {
         val message = "/ToDM 🎲 Death Save: Rolled 1d20 = $roll"
         chatViewModel.addMessage(message)
 
-        if (roll == 1) {
-            _deathSaveFailures.value = (_deathSaveFailures.value + 2).coerceAtMost(3)
-        } else if (roll < 10) {
-            _deathSaveFailures.value = (_deathSaveFailures.value + 1).coerceAtMost(3)
-        } else if (roll == 20) {
-            _deathSaveSuccesses.value = 3
-        } else {
-            _deathSaveSuccesses.value = (_deathSaveSuccesses.value + 1).coerceAtMost(3)
+        when {
+            roll == 1 -> {
+                _deathSaveFailures.value = (_deathSaveFailures.value + 2).coerceAtMost(3)
+            }
+            roll < 10 -> {
+                _deathSaveFailures.value = (_deathSaveFailures.value + 1).coerceAtMost(3)
+            }
+            roll == 20 -> {
+                _deathSaveSuccesses.value = 3
+            }
+            else -> {
+                _deathSaveSuccesses.value = (_deathSaveSuccesses.value + 1).coerceAtMost(3)
+            }
         }
     }
 }

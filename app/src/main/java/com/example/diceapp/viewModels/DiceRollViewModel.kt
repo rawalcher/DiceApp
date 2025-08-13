@@ -14,6 +14,9 @@ class DiceRollViewModel : ViewModel() {
     var messageMode by mutableStateOf(MessageMode.Public)
     var rollMode by mutableStateOf(RollMode.Normal)
 
+    fun rollDeathSave(): Int {
+        return rollD20()
+    }
     fun rollAndFormatMessage(
         label: String,
         modifier: Int,

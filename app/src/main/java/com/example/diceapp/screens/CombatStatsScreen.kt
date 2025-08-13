@@ -1,31 +1,35 @@
 package com.example.diceapp.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.diceapp.viewModels.CharacterViewModel
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import com.example.diceapp.viewModels.ChatViewModel
-import androidx.compose.runtime.getValue
+import com.example.diceapp.viewModels.DiceRollViewModel
 
 @Composable
-fun CombatStatsScreen(characterViewModel: CharacterViewModel, chatViewModel: ChatViewModel) {
+fun CombatStatsScreen(
+    characterViewModel: CharacterViewModel,
+    chatViewModel: ChatViewModel,
+    diceRollViewModel: DiceRollViewModel
+) {
     val shape = RoundedCornerShape(12.dp)
     val borderColor = Color.White
     val cardColor = Color.Black
     val textColor = Color.White
     val successes by characterViewModel.deathSaveSuccesses
     val failures by characterViewModel.deathSaveFailures
-
 
     Scaffold { padding ->
         Column(
@@ -35,43 +39,29 @@ fun CombatStatsScreen(characterViewModel: CharacterViewModel, chatViewModel: Cha
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 StatCard("Proficiency Bonus", "${characterViewModel.proficiencyBonus}", shape, borderColor, cardColor, textColor, Modifier.weight(1f))
                 StatCard("Passive Perception", characterViewModel.passivePerception.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 StatCard("Armor Class", characterViewModel.armorClass.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
                 StatCard("Max HP", characterViewModel.maxHP.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
                 StatCard("Speed", characterViewModel.speed.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 StatCard("Current HP", characterViewModel.currentHP.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
                 StatCard("Temp HP", characterViewModel.tempHP.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 StatCard("Initiative", characterViewModel.initiative.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
                 StatCard("Inspiration", if (characterViewModel.inspiration) "Yes" else "No", shape, borderColor, cardColor, textColor, Modifier.weight(1f))
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 StatCard(
                     title = "Hit Dice",
                     value = "${characterViewModel.hitDiceTotal} (d${characterViewModel.hitDieType})",
@@ -92,7 +82,10 @@ fun CombatStatsScreen(characterViewModel: CharacterViewModel, chatViewModel: Cha
                     DeathSavesSection(
                         successes = successes,
                         failures = failures,
-                        onClick = { characterViewModel.rollDeathSave(chatViewModel) }
+                        onClick = {
+                            val roll = diceRollViewModel.rollDeathSave()
+                            characterViewModel.applyDeathSaveResult(roll, chatViewModel)
+                        }
                     )
                 }
             }
@@ -168,10 +161,7 @@ fun DeathSavesSection(
                 Text("✔", fontSize = 12.sp, color = Color.Green)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     repeat(3) { index ->
-                        SaveCircle(
-                            filled = index < successes,
-                            filledColor = Color.Green
-                        )
+                        SaveCircle(filled = index < successes, filledColor = Color.Green)
                     }
                 }
             }
@@ -180,17 +170,13 @@ fun DeathSavesSection(
                 Text("✘", fontSize = 12.sp, color = Color.Red)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     repeat(3) { index ->
-                        SaveCircle(
-                            filled = index < failures,
-                            filledColor = Color.Red
-                        )
+                        SaveCircle(filled = index < failures, filledColor = Color.Red)
                     }
                 }
             }
         }
     }
 }
-
 
 @Composable
 fun SaveCircle(filled: Boolean, filledColor: Color) {
@@ -208,4 +194,3 @@ fun SaveCircle(filled: Boolean, filledColor: Color) {
             )
     )
 }
-

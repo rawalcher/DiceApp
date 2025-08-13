@@ -71,7 +71,8 @@ fun AppNavHost(
                 composable("combat_stats") {
                     CombatStatsScreen(
                         characterViewModel = characterViewModel,
-                        chatViewModel = chatViewModel
+                        chatViewModel = chatViewModel,
+                        diceRollViewModel = diceRollViewModel
                     )
                 }
                 composable("campaigns") {
