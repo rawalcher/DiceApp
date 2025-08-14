@@ -72,7 +72,10 @@ fun AppNavHost(
                     CombatStatsScreen(
                         characterViewModel = characterViewModel,
                         chatViewModel = chatViewModel,
-                        diceRollViewModel = diceRollViewModel
+                        diceRollViewModel = diceRollViewModel,
+                        onNavigateToChat = {
+                            navController.navigate("chat")
+                        }
                     )
                 }
                 composable("campaigns") {

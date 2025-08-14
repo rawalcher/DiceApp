@@ -74,6 +74,8 @@ class CharacterViewModel : ViewModel() {
     var tempHP by mutableStateOf(0)
 
     val hitDiceTotal: Int = 3
+    var remainingHitDice by mutableStateOf(3)
+
     val hitDieType: Int = 6
 
     private val _deathSaveSuccesses = mutableStateOf(0)
@@ -88,6 +90,14 @@ class CharacterViewModel : ViewModel() {
             val isProficient = skills.find { it.name == "Perception" }?.isProficient ?: false
             return 10 + wisdomMod + if (isProficient) proficiencyBonus else 0
         }
+
+    fun incrementHitDice() {
+        if (remainingHitDice < hitDiceTotal) remainingHitDice++
+    }
+
+    fun decrementHitDice() {
+        if (remainingHitDice > 0) remainingHitDice--
+    }
 
     fun resetDeathSaves() {
         _deathSaveSuccesses.value = 0

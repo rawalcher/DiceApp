@@ -22,7 +22,8 @@ import com.example.diceapp.ui.components.EditDialog
 fun CombatStatsScreen(
     characterViewModel: CharacterViewModel,
     chatViewModel: ChatViewModel,
-    diceRollViewModel: DiceRollViewModel
+    diceRollViewModel: DiceRollViewModel,
+    onNavigateToChat: () -> Unit
 ) {
     val shape = RoundedCornerShape(12.dp)
     val borderColor = Color.White
@@ -87,21 +88,98 @@ fun CombatStatsScreen(
 
             // Row 4
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                StatCard("Initiative", characterViewModel.initiative.toString(), shape, borderColor, cardColor, textColor, Modifier.weight(1f))
-                StatCard("Inspiration", if (characterViewModel.inspiration) "Yes" else "No", shape, borderColor, cardColor, textColor, Modifier.weight(1f))
-            }
-
-            // Row 5
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 StatCard(
-                    title = "Hit Dice",
-                    value = "${characterViewModel.hitDiceTotal} (d${characterViewModel.hitDieType})",
+                    title = "Initiative",
+                    value = characterViewModel.initiative.toString(),
+                    shape = shape,
+                    borderColor = borderColor,
+                    cardColor = cardColor,
+                    textColor = textColor,
+                    modifier = Modifier.weight(1f).clickable {
+                        val message = diceRollViewModel.rollAndFormatMessage(
+                            label = "Initiative",
+                            modifier = characterViewModel.initiative,
+                            type = "Roll"
+                        )
+                        chatViewModel.addMessage(message)
+                        onNavigateToChat()
+                    }
+                )
+                StatCard(
+                    title = "Inspiration",
+                    value = if (characterViewModel.inspiration) "Yes" else "No",
                     shape = shape,
                     borderColor = borderColor,
                     cardColor = cardColor,
                     textColor = textColor,
                     modifier = Modifier.weight(1f)
                 )
+            }
+
+            // Row 5
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    shape = shape,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(80.dp)
+                        .border(BorderStroke(2.dp, borderColor), shape),
+                    colors = CardDefaults.cardColors(containerColor = cardColor)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Decrement Hit Dice
+                        Text(
+                            text = "−",
+                            fontSize = 28.sp,
+                            color = Color.White,
+                            modifier = Modifier
+                                .clickable { characterViewModel.decrementHitDice() }
+                                .padding(12.dp)
+                        )
+
+                        // Center area — ROLL HIT DIE on click
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    val conMod = characterViewModel.abilities.find { it.name == "Constitution" }?.modifier ?: 0
+                                    val message = diceRollViewModel.rollHitDice(
+                                        hitDieType = characterViewModel.hitDieType,
+                                        conModifier = conMod
+                                    )
+                                    chatViewModel.addMessage(message)
+                                    onNavigateToChat()
+                                }
+                        ) {
+                            Text("HIT DICE", fontSize = 12.sp, color = Color.White)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${characterViewModel.remainingHitDice} (d${characterViewModel.hitDieType})",
+                                fontSize = 20.sp,
+                                color = Color.White
+                            )
+                        }
+
+                        // Increment Hit Dice
+                        Text(
+                            text = "+",
+                            fontSize = 28.sp,
+                            color = Color.White,
+                            modifier = Modifier
+                                .clickable { characterViewModel.incrementHitDice() }
+                                .padding(12.dp)
+                        )
+                    }
+                }
+
+
 
                 Box(
                     modifier = Modifier
@@ -116,6 +194,7 @@ fun CombatStatsScreen(
                         onClick = {
                             val roll = diceRollViewModel.rollDeathSave()
                             characterViewModel.applyDeathSaveResult(roll, chatViewModel)
+                            onNavigateToChat()
                         }
                     )
                 }

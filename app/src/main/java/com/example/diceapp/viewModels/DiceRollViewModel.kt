@@ -17,6 +17,20 @@ class DiceRollViewModel : ViewModel() {
     fun rollDeathSave(): Int {
         return rollD20()
     }
+
+    fun rollHitDice(hitDieType: Int, conModifier: Int): String {
+        val roll = Random.nextInt(1, hitDieType + 1)
+        val total = roll + conModifier
+
+        val prefix = if (messageMode == MessageMode.ToDM) "/ToDM " else ""
+
+        return buildString {
+            append("$prefix🎲 Hit Dice: Rolled 1d$hitDieType ($roll)")
+            if (conModifier != 0) append(" ${if (conModifier > 0) "+$conModifier" else "$conModifier"}")
+            append("\n= $total")
+        }
+    }
+
     fun rollAndFormatMessage(
         label: String,
         modifier: Int,
