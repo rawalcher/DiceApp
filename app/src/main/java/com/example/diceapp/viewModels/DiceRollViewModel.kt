@@ -17,7 +17,6 @@ class DiceRollViewModel : ViewModel() {
     fun rollDeathSave(): Int {
         return rollD20()
     }
-
     fun rollHitDice(hitDieType: Int, conModifier: Int): String {
         val roll = Random.nextInt(1, hitDieType + 1)
         val total = roll + conModifier
@@ -29,6 +28,36 @@ class DiceRollViewModel : ViewModel() {
             if (conModifier != 0) append(" ${if (conModifier > 0) "+$conModifier" else "$conModifier"}")
             append("\n= $total")
         }
+    }
+    fun rollDamage(label: String, damageDice: String, damageModifier: Int, damageType: String): String {
+        val baseRoll = rollDiceExpression(damageDice)
+        val total = baseRoll + damageModifier
+        return "⚔\uFE0F $label : Rolled $damageDice ($baseRoll) $damageType \n= $baseRoll ${if (damageModifier >= 0) "+$damageModifier" else "$damageModifier"} \n= $total "
+    }
+    fun rollDiceExpression(expression: String): Int {
+        val diceRegex = Regex("""(\d*)d(\d+)""")
+        var total = 0
+
+        val parts = expression.split('+', '-').map { it.trim() }
+        val operators = Regex("[+-]").findAll(expression).map { it.value }.toList()
+
+        var currentOpIndex = 0
+        for ((index, part) in parts.withIndex()) {
+            val op = if (index == 0) "+" else operators.getOrElse(currentOpIndex++) { "+" }
+
+            val diceMatch = diceRegex.matchEntire(part)
+            val value = if (diceMatch != null) {
+                val count = diceMatch.groupValues[1].toIntOrNull() ?: 1
+                val sides = diceMatch.groupValues[2].toInt()
+                (1..count).sumOf { (1..sides).random() }
+            } else {
+                part.toIntOrNull() ?: 0
+            }
+
+            total += if (op == "+") value else -value
+        }
+
+        return total
     }
 
     fun rollAndFormatMessage(

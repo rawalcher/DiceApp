@@ -24,6 +24,9 @@ import com.example.diceapp.screens.CombatStatsScreen
 import com.example.diceapp.screens.LoginScreen
 import com.example.diceapp.viewModels.CampaignViewModel
 import com.example.diceapp.screens.CampaignsScreen
+import com.example.diceapp.screens.AttackScreen
+import com.example.diceapp.viewModels.AttackViewModel
+import com.example.diceapp.screens.AddAttackScreen
 
 @Composable
 fun AppNavHost(
@@ -31,7 +34,8 @@ fun AppNavHost(
     chatViewModel: ChatViewModel,
     characterViewModel: CharacterViewModel,
     diceRollViewModel: DiceRollViewModel,
-    campaignViewModel: CampaignViewModel
+    campaignViewModel: CampaignViewModel,
+    attackViewModel: AttackViewModel
 ) {
     Scaffold { padding ->
         Box(
@@ -93,7 +97,24 @@ fun AppNavHost(
                         }
                     )
                 }
-
+                composable("attack") {
+                    AttackScreen(
+                        attackViewModel = attackViewModel,
+                        diceRollViewModel = diceRollViewModel,
+                        chatViewModel = chatViewModel,
+                        navController = navController,
+                    )
+                }
+                composable("add_attack") {
+                    AddAttackScreen(
+                        navController = navController,
+                        abilities = characterViewModel.abilities,
+                        proficiencyBonus = characterViewModel.proficiencyBonus,
+                        onAddAttack = { name, toHit, damageDice, damageModifier, damageType ->
+                            attackViewModel.addAttack(name, toHit, damageDice, damageModifier, damageType)
+                        }
+                    )
+                }
 
                 composable(
                     route = "dice_roll/{label}/{modifier}/{proficiencyBonus}/{type}",

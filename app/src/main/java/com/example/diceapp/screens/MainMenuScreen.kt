@@ -41,6 +41,9 @@ fun MainMenuScreen(navController: NavController) {
             Button(onClick = { navController.navigate("chat") }) {
                 Text("Chat")
             }
+            Button(onClick = { navController.navigate("attack") }) {
+                Text("Attacks")
+            }
             Button(onClick = { navController.navigate("login") }) {
                 Text("Login")
             }

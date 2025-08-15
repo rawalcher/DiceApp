@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ChatViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel
-import com.example.diceapp.ui.components.EditDialog
+import com.example.diceapp.components.EditDialog
 
 @Composable
 fun CombatStatsScreen(
