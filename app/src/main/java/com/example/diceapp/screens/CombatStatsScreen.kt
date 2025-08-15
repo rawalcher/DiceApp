@@ -105,15 +105,35 @@ fun CombatStatsScreen(
                         onNavigateToChat()
                     }
                 )
-                StatCard(
-                    title = "Inspiration",
-                    value = if (characterViewModel.inspiration) "Yes" else "No",
+                Card(
                     shape = shape,
-                    borderColor = borderColor,
-                    cardColor = cardColor,
-                    textColor = textColor,
-                    modifier = Modifier.weight(1f)
-                )
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(80.dp)
+                        .border(BorderStroke(2.dp, borderColor), shape),
+                    colors = CardDefaults.cardColors(containerColor = cardColor)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("INSPIRATION", fontSize = 12.sp, color = textColor)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        RadioButton(
+                            selected = characterViewModel.inspiration,
+                            onClick = { characterViewModel.inspiration = !characterViewModel.inspiration },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = Color.White,
+                                unselectedColor = Color.Gray,
+                                disabledSelectedColor = Color.DarkGray,
+                                disabledUnselectedColor = Color.DarkGray
+                            )
+                        )
+                    }
+                }
             }
 
             // Row 5
@@ -195,6 +215,9 @@ fun CombatStatsScreen(
                             val roll = diceRollViewModel.rollDeathSave()
                             characterViewModel.applyDeathSaveResult(roll, chatViewModel)
                             onNavigateToChat()
+                        },
+                        onReset = {
+                            characterViewModel.resetDeathSaves()
                         }
                     )
                 }
@@ -307,7 +330,8 @@ private fun StatCard(
 fun DeathSavesSection(
     successes: Int,
     failures: Int,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onReset: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -316,8 +340,27 @@ fun DeathSavesSection(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("DEATH SAVES", fontSize = 12.sp, color = Color.White)
-
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp)
+        ) {
+            Text(
+                "DEATH SAVES",
+                fontSize = 12.sp,
+                color = Color.White,
+                modifier = Modifier.align(Alignment.Center)
+            )
+            Text(
+                "↺",
+                fontSize = 16.sp,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .clickable { onReset() }
+                    .padding(end = 4.dp)
+            )
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -330,7 +373,6 @@ fun DeathSavesSection(
                     }
                 }
             }
-
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("✘", fontSize = 12.sp, color = Color.Red)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -342,7 +384,6 @@ fun DeathSavesSection(
         }
     }
 }
-
 @Composable
 fun SaveCircle(filled: Boolean, filledColor: Color) {
     Box(
