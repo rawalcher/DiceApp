@@ -35,6 +35,9 @@ fun MainMenuScreen(navController: NavController) {
             Button(onClick = { navController.navigate("skills") }) {
                 Text("Skills")
             }
+            Button(onClick = { navController.navigate("create_character") }) {
+                Text("Create Character")
+            }
             Button(onClick = { navController.navigate("combat_stats") }) {
                 Text("Combat Stats")
             }

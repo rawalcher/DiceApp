@@ -27,6 +27,7 @@ import com.example.diceapp.screens.CampaignsScreen
 import com.example.diceapp.screens.AttackScreen
 import com.example.diceapp.viewModels.AttackViewModel
 import com.example.diceapp.screens.AddAttackScreen
+import com.example.diceapp.screens.CreateCharacterScreen
 
 @Composable
 fun AppNavHost(
@@ -64,6 +65,17 @@ fun AppNavHost(
                     SavingThrowsScreen(
                         navController = navController,
                         characterViewModel = characterViewModel
+                    )
+                }
+
+                composable("create_character") {
+                    CreateCharacterScreen(
+                        navController = navController,
+                        characterViewModel = characterViewModel,
+                        onCharacterCreated = {
+                            // z.B. zurück zum Menü navigieren oder SkillsScreen öffnen
+                            navController.navigate("menu")
+                        }
                     )
                 }
                 composable("skills") {

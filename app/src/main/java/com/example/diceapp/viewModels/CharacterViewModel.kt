@@ -19,7 +19,46 @@ data class Skill(
     val modifier: Int = 0
 )
 
+data class CharacterData(
+    val name: String,
+    val charClass: String,
+    val level: Int,
+    val race: Race? = null
+)
+
+data class Race(
+    val name: String,
+    val description: String
+)
+
+
+
 class CharacterViewModel : ViewModel() {
+
+    var characters by mutableStateOf<List<CharacterData>>(emptyList())
+        private set
+
+    fun addCharacter(name: String, charClass: String, level: Int, race: Race? = null) {
+        characters = characters + CharacterData(name, charClass, level, race)
+    }
+
+
+    // =====================
+    // Dynamische Rassenliste
+    // =====================
+    var races by mutableStateOf(
+        listOf(
+            Race("Elf", "Edle Rasse, flink und gut mit Pfeil & Bogen"),
+            Race("Zwerg", "Robust, gut im Bergbau und Nahkampf"),
+            Race("Tiefling", "Dämonisches Erbe, magische Affinität"),
+            Race("Mensch", "Anpassungsfähig und vielseitig")
+        )
+    )
+        private set
+
+    fun addRace(name: String, description: String) {
+        races = races + Race(name, description)
+    }
 
     val proficiencyBonus = 2
 
