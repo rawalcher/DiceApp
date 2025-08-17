@@ -28,6 +28,10 @@ import com.example.diceapp.screens.AttackScreen
 import com.example.diceapp.viewModels.AttackViewModel
 import com.example.diceapp.screens.AddAttackScreen
 import com.example.diceapp.screens.CreateCharacterScreen
+import com.example.diceapp.screens.SpellsScreen
+import com.example.diceapp.viewModels.SpellViewModel
+import com.example.diceapp.screens.AddSpellScreen
+import com.example.diceapp.viewModels.Spell
 
 @Composable
 fun AppNavHost(
@@ -36,7 +40,8 @@ fun AppNavHost(
     characterViewModel: CharacterViewModel,
     diceRollViewModel: DiceRollViewModel,
     campaignViewModel: CampaignViewModel,
-    attackViewModel: AttackViewModel
+    attackViewModel: AttackViewModel,
+    spellViewModel: SpellViewModel
 ) {
     Scaffold { padding ->
         Box(
@@ -117,6 +122,16 @@ fun AppNavHost(
                         navController = navController,
                     )
                 }
+                composable("spells") {
+                    SpellsScreen(
+                        navController = navController,
+                        spellViewModel = spellViewModel,
+                        chatViewModel = chatViewModel,
+                        diceRollViewModel = diceRollViewModel,
+                        spellSaveDC = characterViewModel.spellSaveDC
+                    )
+                }
+
                 composable("add_attack") {
                     AddAttackScreen(
                         navController = navController,
@@ -127,7 +142,36 @@ fun AppNavHost(
                         }
                     )
                 }
-
+                composable("add_spell") {
+                    AddSpellScreen(
+                        navController = navController,
+                        abilities = characterViewModel.abilities,
+                        proficiencyBonus = characterViewModel.proficiencyBonus,
+                        spellSaveDC = characterViewModel.spellSaveDC,
+                        onAddSpell = { name, level, castingTime, range, components,
+                                       concentration, ritual, attackBonus, saveDC, saveAbility,
+                                       damageDice, damageModifier, damageType, description ->
+                            spellViewModel.addSpell(
+                                Spell(
+                                    name = name,
+                                    level = level,
+                                    castingTime = castingTime,
+                                    range = range,
+                                    components = components,
+                                    concentration = concentration,
+                                    ritual = ritual,
+                                    attackBonus = attackBonus,
+                                    saveDC = saveDC,
+                                    saveAbility = saveAbility,
+                                    damageDice = damageDice,
+                                    damageModifier = damageModifier,
+                                    damageType = damageType,
+                                    description = description
+                                )
+                            )
+                        }
+                    )
+                }
                 composable(
                     route = "dice_roll/{label}/{modifier}/{proficiencyBonus}/{type}",
                     arguments = listOf(

@@ -12,6 +12,7 @@ import com.example.diceapp.ui.theme.DiceAppTheme
 import com.example.diceapp.viewModels.DiceRollViewModel
 import com.example.diceapp.viewModels.CampaignViewModel
 import com.example.diceapp.viewModels.AttackViewModel
+import com.example.diceapp.viewModels.SpellViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -20,6 +21,7 @@ class MainActivity : ComponentActivity() {
     private val diceRollViewModel: DiceRollViewModel by viewModels()
     private val campaignViewModel: CampaignViewModel by viewModels()
     private val attackViewModel: AttackViewModel by viewModels()
+    private val spellViewModel: SpellViewModel by viewModels()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,7 +36,8 @@ class MainActivity : ComponentActivity() {
                         characterViewModel = characterViewModel,
                         diceRollViewModel = diceRollViewModel,
                         campaignViewModel = campaignViewModel,
-                        attackViewModel = attackViewModel
+                        attackViewModel = attackViewModel,
+                        spellViewModel = spellViewModel
                     )
                 }
             }

@@ -173,4 +173,18 @@ class CharacterViewModel : ViewModel() {
             }
         }
     }
+    var spellcastingAbilityName by mutableStateOf("Intelligence")
+
+    val spellcastingAbility: Ability?
+        get() = abilities.find { it.name == spellcastingAbilityName }
+
+    val spellAttackBonus: Int
+        get() = (spellcastingAbility?.modifier ?: 0) + proficiencyBonus
+
+    val spellSaveDC: Int
+        get() = 8 + (spellcastingAbility?.modifier ?: 0) + proficiencyBonus
+
+    fun setSpellcastingAbility(name: String) {
+        spellcastingAbilityName = name
+    }
 }
