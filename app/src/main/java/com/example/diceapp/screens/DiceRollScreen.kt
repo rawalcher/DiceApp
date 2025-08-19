@@ -13,6 +13,7 @@ import com.example.diceapp.viewModels.ChatViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel.MessageMode
 import com.example.diceapp.viewModels.DiceRollViewModel.RollMode
+import com.example.diceapp.viewModels.ModifierViewModel
 
 @Composable
 fun DiceRollScreen(
@@ -22,8 +23,10 @@ fun DiceRollScreen(
     type: String,
     navController: NavController,
     chatViewModel: ChatViewModel,
-    diceRollViewModel: DiceRollViewModel
+    diceRollViewModel: DiceRollViewModel,
+    modifierViewModel: ModifierViewModel
 ) {
+    val (extraFlat, extraDice) = modifierViewModel.aggregateFor(type)
     Scaffold(
         topBar = {
             MessageModeToggle(
@@ -64,7 +67,20 @@ fun DiceRollScreen(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
-
+            if (extraFlat != 0 || extraDice.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = buildString {
+                        append("Buffs: ")
+                        val parts = mutableListOf<String>()
+                        if (extraFlat != 0) parts += (if (extraFlat > 0) "+$extraFlat" else "$extraFlat")
+                        if (extraDice.isNotEmpty()) parts += extraDice.joinToString(" + ")
+                        append(parts.joinToString(" "))
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
@@ -73,7 +89,9 @@ fun DiceRollScreen(
                         label = rollLabel,
                         modifier = modifier,
                         proficiencyBonus = proficiencyBonus,
-                        type = type
+                        type = type,
+                        extraFlatModifier = extraFlat,
+                        extraDice = extraDice
                     )
                     chatViewModel.postExternalRoll(message)
                     navController.navigate("chat") {

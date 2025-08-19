@@ -27,6 +27,6 @@ fun parseAndRollDice(command: String): String {
         if (modifier != 0) append(modifierStr)
         append(": ${rolls.joinToString(", ")}")
         if (modifier != 0) append(" + $modifier")
-        append("\n= $total") // result on new line, for large styling
+        append("\n= $total")
     }
 }

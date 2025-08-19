@@ -59,17 +59,17 @@ class DiceRollViewModel : ViewModel() {
 
         return total
     }
-
     fun rollAndFormatMessage(
         label: String,
         modifier: Int,
         proficiencyBonus: Int? = null,
-        type: String = "Check"
+        type: String = "Check",
+        extraFlatModifier: Int = 0,
+        extraDice: List<String> = emptyList()
     ): String {
         val rolls = when (rollMode) {
             RollMode.Normal -> listOf(rollD20())
-            RollMode.Advantage -> listOf(rollD20(), rollD20())
-            RollMode.Disadvantage -> listOf(rollD20(), rollD20())
+            RollMode.Advantage, RollMode.Disadvantage -> listOf(rollD20(), rollD20())
         }
 
         val selectedRoll = when (rollMode) {
@@ -85,24 +85,28 @@ class DiceRollViewModel : ViewModel() {
         }
 
         val prof = proficiencyBonus ?: 0
-        val total = selectedRoll + modifier + prof
+
+        val extraDiceRolls: List<Pair<String, Int>> = extraDice.map { expr -> expr to rollDiceExpression(expr) }
+        val extraDiceSum = extraDiceRolls.sumOf { it.second }
+
+        val total = selectedRoll + modifier + prof + extraFlatModifier + extraDiceSum
         val prefix = if (messageMode == MessageMode.ToDM) "/ToDM " else ""
 
         return buildString {
-            // First line: roll info
+            // First line
             append("$prefix🎲 $label $type: ")
             when (rollMode) {
                 RollMode.Normal -> append("Rolled 1d20 ($selectedRoll) $rollTypeLabel")
                 else -> append("Rolled 1d20 (${rolls.joinToString(" vs ")}) $selectedRoll $rollTypeLabel")
             }
 
-            // Second line: calculation
+            // Second line: breakdown
             append("\n= $selectedRoll")
-            if (modifier != 0) {
-                append(" ${if (modifier > 0) "+$modifier" else "$modifier"}")
-            }
-            if (prof > 0) {
-                append(" + $prof")
+            if (modifier != 0) append(" ${if (modifier > 0) "+$modifier" else "$modifier"}")
+            if (prof > 0) append(" + $prof")
+            if (extraFlatModifier != 0) append(" ${if (extraFlatModifier > 0) "+$extraFlatModifier" else "$extraFlatModifier"}")
+            extraDiceRolls.forEach { (expr, v) ->
+                append(" + $expr($v)")
             }
 
             // Third line: total

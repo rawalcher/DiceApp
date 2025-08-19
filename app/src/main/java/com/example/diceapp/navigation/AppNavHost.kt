@@ -35,6 +35,10 @@ import com.example.diceapp.viewModels.Spell
 import com.example.diceapp.screens.AdditionalResourcesScreen
 import com.example.diceapp.screens.AddResourceScreen
 import com.example.diceapp.viewModels.ResourceViewModel
+import com.example.diceapp.screens.AdditionalModifiersScreen
+import com.example.diceapp.screens.AddModifierScreen
+import com.example.diceapp.viewModels.ModifierViewModel
+
 
 @Composable
 fun AppNavHost(
@@ -45,7 +49,8 @@ fun AppNavHost(
     campaignViewModel: CampaignViewModel,
     attackViewModel: AttackViewModel,
     spellViewModel: SpellViewModel,
-    resourceViewModel: ResourceViewModel
+    resourceViewModel: ResourceViewModel,
+    modifierViewModel: ModifierViewModel
 ) {
     Scaffold { padding ->
         Box(
@@ -142,6 +147,12 @@ fun AppNavHost(
                         resourceViewModel = resourceViewModel
                     )
                 }
+                composable("modifiers") {
+                    AdditionalModifiersScreen(navController = navController, modifierViewModel = modifierViewModel)
+                }
+                composable("add_modifier") {
+                    AddModifierScreen(navController = navController, modifierViewModel = modifierViewModel)
+                }
 
                 composable("add_resource") {
                     AddResourceScreen(
@@ -217,7 +228,8 @@ fun AppNavHost(
                         type = type,
                         navController = navController,
                         chatViewModel = chatViewModel,
-                        diceRollViewModel = diceRollViewModel
+                        diceRollViewModel = diceRollViewModel,
+                        modifierViewModel = modifierViewModel
                     )
                 }
             }

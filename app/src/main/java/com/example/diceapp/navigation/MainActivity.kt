@@ -14,6 +14,8 @@ import com.example.diceapp.viewModels.CampaignViewModel
 import com.example.diceapp.viewModels.AttackViewModel
 import com.example.diceapp.viewModels.SpellViewModel
 import com.example.diceapp.viewModels.ResourceViewModel
+import com.example.diceapp.viewModels.ModifierViewModel
+
 
 class MainActivity : ComponentActivity() {
 
@@ -24,6 +26,8 @@ class MainActivity : ComponentActivity() {
     private val attackViewModel: AttackViewModel by viewModels()
     private val spellViewModel: SpellViewModel by viewModels()
     private val resourceViewModel: ResourceViewModel by viewModels()
+    private val modifierViewModel: ModifierViewModel by viewModels()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +43,8 @@ class MainActivity : ComponentActivity() {
                         campaignViewModel = campaignViewModel,
                         attackViewModel = attackViewModel,
                         spellViewModel = spellViewModel,
-                        resourceViewModel = resourceViewModel
+                        resourceViewModel = resourceViewModel,
+                        modifierViewModel = modifierViewModel
                     )
                 }
             }
