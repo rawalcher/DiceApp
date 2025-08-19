@@ -192,36 +192,3 @@ fun evalExpression(expression: String): Int {
 
     return total
 }
-@Composable
-fun IntFieldWithDialog(
-    label: String,
-    value: Int,
-    onValueChange: (Int) -> Unit,
-    range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE
-) {
-    var show by remember { mutableStateOf(false) }
-
-    OutlinedTextField(
-        value = value.toString(),
-        onValueChange = { /* read-only; open dialog instead */ },
-        label = { Text(label, color = Color.White) },
-        readOnly = true,
-        modifier = Modifier
-            .background(Color.Black)
-            .clickable { show = true },
-        textStyle = LocalTextStyle.current.copy(color = Color.White)
-    )
-
-    if (show) {
-        EditDialog(
-            fieldName = label,
-            initialValue = value,
-            valueRange = range,
-            onDismiss = { show = false },
-            onApply = {
-                onValueChange(it.coerceIn(range))
-                show = false
-            }
-        )
-    }
-}

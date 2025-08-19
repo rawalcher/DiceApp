@@ -32,6 +32,9 @@ import com.example.diceapp.screens.SpellsScreen
 import com.example.diceapp.viewModels.SpellViewModel
 import com.example.diceapp.screens.AddSpellScreen
 import com.example.diceapp.viewModels.Spell
+import com.example.diceapp.screens.AdditionalResourcesScreen
+import com.example.diceapp.screens.AddResourceScreen
+import com.example.diceapp.viewModels.ResourceViewModel
 
 @Composable
 fun AppNavHost(
@@ -41,7 +44,8 @@ fun AppNavHost(
     diceRollViewModel: DiceRollViewModel,
     campaignViewModel: CampaignViewModel,
     attackViewModel: AttackViewModel,
-    spellViewModel: SpellViewModel
+    spellViewModel: SpellViewModel,
+    resourceViewModel: ResourceViewModel
 ) {
     Scaffold { padding ->
         Box(
@@ -94,11 +98,12 @@ fun AppNavHost(
                         characterViewModel = characterViewModel,
                         chatViewModel = chatViewModel,
                         diceRollViewModel = diceRollViewModel,
-                        onNavigateToChat = {
-                            navController.navigate("chat")
-                        }
+                        resourceViewModel = resourceViewModel,
+                        spellViewModel = spellViewModel,
+                        onNavigateToChat = { navController.navigate("chat") }
                     )
                 }
+
                 composable("campaigns") {
                     CampaignsScreen(
                         navController = navController,
@@ -129,6 +134,19 @@ fun AppNavHost(
                         chatViewModel = chatViewModel,
                         diceRollViewModel = diceRollViewModel,
                         spellSaveDC = characterViewModel.spellSaveDC
+                    )
+                }
+                composable("resources") {
+                    AdditionalResourcesScreen(
+                        navController = navController,
+                        resourceViewModel = resourceViewModel
+                    )
+                }
+
+                composable("add_resource") {
+                    AddResourceScreen(
+                        navController = navController,
+                        resourceViewModel = resourceViewModel
                     )
                 }
 

@@ -404,28 +404,21 @@ fun SpellRow(
     }
 }
 
-/* --------------------------- helpers --------------------------- */
-
 @Composable
 private fun FlagLetter(letter: String) {
     Text(letter, color = Color.White, fontSize = 12.sp)
 }
-
-// Human-friendly type label
 private fun Spell.typeLabel(): String = when {
     attackBonus != null -> "Attack"
     saveDC != null -> "Save"
     else -> "Utility"
 }
-
 private fun Spell.damageSummaryOrDash(): String {
     return if (damageDice != null && damageType != null) {
         val mod = if (damageModifier >= 0) "+$damageModifier" else "$damageModifier"
         "Dmg: $damageDice $mod $damageType"
     } else "—"
 }
-
-/** Builds a rich description text including range/components/flags/description. */
 private fun buildSpellDescription(spell: Spell): String {
     val flags = buildList {
         if (spell.concentration) add("Concentration")

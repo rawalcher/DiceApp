@@ -17,12 +17,17 @@ import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ChatViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel
 import com.example.diceapp.components.EditDialog
+import com.example.diceapp.viewModels.ResourceViewModel
+import com.example.diceapp.viewModels.SpellViewModel
+
 
 @Composable
 fun CombatStatsScreen(
     characterViewModel: CharacterViewModel,
     chatViewModel: ChatViewModel,
     diceRollViewModel: DiceRollViewModel,
+    resourceViewModel: ResourceViewModel,
+    spellViewModel: SpellViewModel,
     onNavigateToChat: () -> Unit
 ) {
     val shape = RoundedCornerShape(12.dp)
@@ -230,17 +235,24 @@ fun CombatStatsScreen(
                     .padding(top = 12.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Button(onClick = { characterViewModel.shortRest() }) {
+                Button(onClick = {
+                    characterViewModel.shortRest()
+                    resourceViewModel.shortRest()
+                }) {
                     Text("Short Rest")
                 }
-                Button(onClick = { characterViewModel.longRest() }) {
+                Button(onClick = {
+                    characterViewModel.longRest()
+                    resourceViewModel.longRest()
+                    (1..9).forEach { lvl -> spellViewModel.resetSlots(lvl) }
+                }) {
                     Text("Long Rest")
                 }
             }
+
         }
     }
 
-    // Handle dialog rendering
     when (showEditDialogFor) {
         "CurrentHP" -> EditDialog(
             fieldName = "Current HP",
