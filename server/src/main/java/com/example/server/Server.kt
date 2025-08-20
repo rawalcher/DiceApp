@@ -47,10 +47,38 @@ data class JoinCampaignRequest(
     val campaignId: String
 )
 
+@Serializable
+data class ChatMessage(
+    val id: String,
+    val campaignId: String,
+    val senderId: String,
+    val senderName: String,
+    val content: String,
+    val messageType: MessageType,
+    val timestamp: Long,
+    val isToGM: Boolean = false
+)
+
+@Serializable
+enum class MessageType {
+    CHAT, ROLL
+}
+
+@Serializable
+data class SendMessageRequest(
+    val campaignId: String,
+    val content: String,
+    val messageType: MessageType,
+    val isToGM: Boolean = false
+)
+
+@Serializable
+data class GetMessagesResponse(
+    val messages: List<ChatMessage>
+)
+
 val db = DriverManager.getConnection("jdbc:sqlite:data.db")
 val secret = "very-secure-key"
-
-// TODO Maybe split Server into subclasses
 
 fun initializeTables() {
     db.createStatement().use {
@@ -87,6 +115,30 @@ fun initializeTables() {
                 joined_at INTEGER NOT NULL,
                 PRIMARY KEY (campaign_id, player_id)
             );
+            """.trimIndent()
+        )
+
+        it.executeUpdate(
+            """
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id TEXT PRIMARY KEY,
+                campaign_id TEXT NOT NULL,
+                sender_id TEXT NOT NULL,
+                sender_name TEXT NOT NULL,
+                content TEXT NOT NULL,
+                message_type TEXT NOT NULL,
+                is_to_gm INTEGER NOT NULL DEFAULT 0,
+                timestamp INTEGER NOT NULL,
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            """.trimIndent()
+        )
+
+        it.executeUpdate(
+            """
+            CREATE INDEX IF NOT EXISTS idx_chat_messages_campaign_timestamp 
+            ON chat_messages(campaign_id, timestamp);
             """.trimIndent()
         )
     }
@@ -166,8 +218,6 @@ fun main() {
                     println("Authenticated user: $username (id=$userId)")
                     call.respondText("You are logged in as user '$username' with ID: $userId")
                 }
-
-                // TODO Split SQL into Methods to reduce bloat and make comments unnecessary
 
                 // Get all campaigns with join status for current user
                 get("/campaigns") {
@@ -336,9 +386,191 @@ fun main() {
                     println("Campaign $campaignId deleted by user $userId")
                     call.respondText("Campaign deleted successfully")
                 }
+
+                get("/campaigns/{campaignId}/messages") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val campaignId = call.parameters["campaignId"]
+                    val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 50
+                    val before = call.request.queryParameters["before"]?.toLongOrNull()
+
+                    if (campaignId == null) {
+                        call.respondText("Campaign ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@get
+                    }
+
+                    if (!isUserInCampaign(userId, campaignId)) {
+                        call.respondText("Not authorized to view this campaign's messages", status = io.ktor.http.HttpStatusCode.Forbidden)
+                        return@get
+                    }
+
+                    val isGM = isUserCampaignOwner(userId, campaignId)
+
+                    val messages = mutableListOf<ChatMessage>()
+
+                    val query = if (before != null) {
+                        """
+                        SELECT id, campaign_id, sender_id, sender_name, content, message_type, is_to_gm, timestamp
+                        FROM chat_messages 
+                        WHERE campaign_id = ? 
+                        AND timestamp < ?
+                        AND (is_to_gm = 0 OR sender_id = ? OR ?)
+                        ORDER BY timestamp DESC 
+                        LIMIT ?
+                        """.trimIndent()
+                    } else {
+                        """
+                        SELECT id, campaign_id, sender_id, sender_name, content, message_type, is_to_gm, timestamp
+                        FROM chat_messages 
+                        WHERE campaign_id = ? 
+                        AND (is_to_gm = 0 OR sender_id = ? OR ?)
+                        ORDER BY timestamp DESC 
+                        LIMIT ?
+                        """.trimIndent()
+                    }
+
+                    val stmt = db.prepareStatement(query)
+                    var paramIndex = 1
+                    stmt.setString(paramIndex++, campaignId)
+                    if (before != null) {
+                        stmt.setLong(paramIndex++, before)
+                    }
+                    stmt.setString(paramIndex++, userId)
+                    stmt.setBoolean(paramIndex++, isGM)
+                    stmt.setInt(paramIndex, limit)
+
+                    val rs = stmt.executeQuery()
+
+                    while (rs.next()) {
+                        messages.add(ChatMessage(
+                            id = rs.getString("id"),
+                            campaignId = rs.getString("campaign_id"),
+                            senderId = rs.getString("sender_id"),
+                            senderName = rs.getString("sender_name"),
+                            content = rs.getString("content"),
+                            messageType = MessageType.valueOf(rs.getString("message_type")),
+                            timestamp = rs.getLong("timestamp"),
+                            isToGM = rs.getBoolean("is_to_gm")
+                        ))
+                    }
+
+                    call.respond(GetMessagesResponse(messages.reversed()))
+                }
+
+                post("/campaigns/{campaignId}/messages") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val username = principal.payload.getClaim("username").asString()
+                    val campaignId = call.parameters["campaignId"]
+                    val body = call.receive<SendMessageRequest>()
+
+                    if (campaignId == null) {
+                        call.respondText("Campaign ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@post
+                    }
+
+                    if (body.campaignId != campaignId) {
+                        call.respondText("Campaign ID mismatch", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@post
+                    }
+
+                    if (!isUserInCampaign(userId, campaignId)) {
+                        call.respondText("Not authorized to send messages to this campaign", status = io.ktor.http.HttpStatusCode.Forbidden)
+                        return@post
+                    }
+
+                    val messageId = UUID.randomUUID().toString()
+                    val timestamp = System.currentTimeMillis()
+
+                    val stmt = db.prepareStatement("""
+                        INSERT INTO chat_messages (id, campaign_id, sender_id, sender_name, content, message_type, is_to_gm, timestamp)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """.trimIndent())
+
+                    stmt.setString(1, messageId)
+                    stmt.setString(2, campaignId)
+                    stmt.setString(3, userId)
+                    stmt.setString(4, username)
+                    stmt.setString(5, body.content)
+                    stmt.setString(6, body.messageType.name)
+                    stmt.setBoolean(7, body.isToGM)
+                    stmt.setLong(8, timestamp)
+
+                    stmt.executeUpdate()
+
+                    val message = ChatMessage(
+                        id = messageId,
+                        campaignId = campaignId,
+                        senderId = userId,
+                        senderName = username,
+                        content = body.content,
+                        messageType = body.messageType,
+                        timestamp = timestamp,
+                        isToGM = body.isToGM
+                    )
+
+                    println("Message sent by $username to campaign $campaignId: ${body.content}")
+                    call.respond(message)
+                }
+
+                delete("/campaigns/{campaignId}/messages/{messageId}") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val campaignId = call.parameters["campaignId"]
+                    val messageId = call.parameters["messageId"]
+
+                    if (campaignId == null || messageId == null) {
+                        call.respondText("Campaign ID and Message ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@delete
+                    }
+
+                    val checkStmt = db.prepareStatement("""
+                        SELECT sender_id FROM chat_messages 
+                        WHERE id = ? AND campaign_id = ?
+                    """.trimIndent())
+                    checkStmt.setString(1, messageId)
+                    checkStmt.setString(2, campaignId)
+                    val rs = checkStmt.executeQuery()
+
+                    if (!rs.next()) {
+                        call.respondText("Message not found", status = io.ktor.http.HttpStatusCode.NotFound)
+                        return@delete
+                    }
+
+                    val senderId = rs.getString("sender_id")
+                    val isGM = isUserCampaignOwner(userId, campaignId)
+
+                    if (senderId != userId && !isGM) {
+                        call.respondText("Not authorized to delete this message", status = io.ktor.http.HttpStatusCode.Forbidden)
+                        return@delete
+                    }
+
+                    val deleteStmt = db.prepareStatement("DELETE FROM chat_messages WHERE id = ?")
+                    deleteStmt.setString(1, messageId)
+                    deleteStmt.executeUpdate()
+
+                    println("Message $messageId deleted by user $userId")
+                    call.respondText("Message deleted successfully")
+                }
             }
         }
     }.start(wait = true)
+}
+
+fun isUserInCampaign(userId: String, campaignId: String): Boolean {
+    val stmt = db.prepareStatement("SELECT 1 FROM campaign_players WHERE player_id = ? AND campaign_id = ?")
+    stmt.setString(1, userId)
+    stmt.setString(2, campaignId)
+    val rs = stmt.executeQuery()
+    return rs.next()
+}
+
+fun isUserCampaignOwner(userId: String, campaignId: String): Boolean {
+    val stmt = db.prepareStatement("SELECT 1 FROM campaigns WHERE owner_id = ? AND id = ?")
+    stmt.setString(1, userId)
+    stmt.setString(2, campaignId)
+    val rs = stmt.executeQuery()
+    return rs.next()
 }
 
 fun generateToken(userId: String, username: String): String {

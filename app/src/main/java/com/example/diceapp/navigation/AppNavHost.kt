@@ -75,6 +75,16 @@ fun AppNavHost(
                 composable("chat") {
                     ChatScreen(chatViewModel = chatViewModel)
                 }
+                composable(
+                    route = "chat/{campaignId}",
+                    arguments = listOf(navArgument("campaignId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val campaignId = backStackEntry.arguments?.getString("campaignId")
+                    ChatScreen(
+                        chatViewModel = chatViewModel,
+                        campaignId = campaignId
+                    )
+                }
                 composable("saving_throws") {
                     SavingThrowsScreen(
                         navController = navController,

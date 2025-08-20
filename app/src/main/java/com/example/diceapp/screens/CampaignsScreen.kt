@@ -101,14 +101,13 @@ fun CampaignsScreen(
                         CampaignCard(
                             campaign = campaign,
                             onJoin = {
-                                // TODO Actually make the chats campaign specific and offload the chat to server
                                 if (campaign.isJoined) {
                                     campaignViewModel.selectCampaign(campaign)
-                                    navController.navigate("chat")
+                                    navController.navigate("chat/${campaign.id}")
                                 } else {
                                     campaignViewModel.joinCampaign(context, campaign.id) {
                                         campaignViewModel.selectCampaign(campaign)
-                                        navController.navigate("chat")
+                                        navController.navigate("chat/${campaign.id}")
                                     }
                                 }
                             },
