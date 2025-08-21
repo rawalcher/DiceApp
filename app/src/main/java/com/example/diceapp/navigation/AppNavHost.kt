@@ -37,6 +37,7 @@ import com.example.diceapp.screens.AddResourceScreen
 import com.example.diceapp.viewModels.ResourceViewModel
 import com.example.diceapp.screens.AdditionalModifiersScreen
 import com.example.diceapp.screens.AddModifierScreen
+import com.example.diceapp.viewModels.CreateCharacterViewModel
 import com.example.diceapp.viewModels.ModifierViewModel
 
 
@@ -50,7 +51,8 @@ fun AppNavHost(
     attackViewModel: AttackViewModel,
     spellViewModel: SpellViewModel,
     resourceViewModel: ResourceViewModel,
-    modifierViewModel: ModifierViewModel
+    modifierViewModel: ModifierViewModel,
+    createCharacterViewModel: CreateCharacterViewModel
 ) {
     Scaffold { padding ->
         Box(
@@ -95,13 +97,10 @@ fun AppNavHost(
                 composable("create_character") {
                     CreateCharacterScreen(
                         navController = navController,
-                        characterViewModel = characterViewModel,
-                        onCharacterCreated = {
-                            // z.B. zurück zum Menü navigieren oder SkillsScreen öffnen
-                            navController.navigate("menu")
-                        }
+                        viewModel = createCharacterViewModel
                     )
                 }
+
                 composable("skills") {
                     SkillsScreen(
                         navController = navController,

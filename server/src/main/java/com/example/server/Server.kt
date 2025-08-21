@@ -77,6 +77,27 @@ data class GetMessagesResponse(
     val messages: List<ChatMessage>
 )
 
+@Serializable
+data class Character(
+    val id: Int = 0,
+    val name: String,
+    val charClass: String,
+    val level: Int,
+    val raceName: String? = null,
+    val raceDescription: String? = null,
+    val userId: String? = null,
+    val campaignId: String? = null
+)
+
+@Serializable
+data class CreateCharacterRequest(
+    val name: String,
+    val charClass: String,
+    val level: Int,
+    val raceName: String? = null,
+    val raceDescription: String? = null
+)
+
 val db = DriverManager.getConnection("jdbc:sqlite:data.db")
 val secret = "very-secure-key"
 
@@ -141,6 +162,26 @@ fun initializeTables() {
             ON chat_messages(campaign_id, timestamp);
             """.trimIndent()
         )
+
+        it.executeUpdate(
+            """
+            CREATE TABLE IF NOT EXISTS characters (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                char_class TEXT NOT NULL,
+                level INTEGER NOT NULL,
+                race_name TEXT,
+                race_description TEXT,
+                user_id TEXT,
+                campaign_id TEXT,
+                created_at INTEGER,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL
+            );
+            """.trimIndent()
+        )
+
+
     }
 }
 
@@ -552,6 +593,183 @@ fun main() {
                     println("Message $messageId deleted by user $userId")
                     call.respondText("Message deleted successfully")
                 }
+                // Character endpoints
+                post("/characters") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val body = call.receive<CreateCharacterRequest>()
+
+                    val stmt = db.prepareStatement("""
+                        INSERT INTO characters (name, char_class, level, race_name, race_description, user_id, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """.trimIndent(), java.sql.Statement.RETURN_GENERATED_KEYS)
+
+                    stmt.setString(1, body.name)
+                    stmt.setString(2, body.charClass)
+                    stmt.setInt(3, body.level)
+                    stmt.setString(4, body.raceName)
+                    stmt.setString(5, body.raceDescription)
+                    stmt.setString(6, userId)
+                    stmt.setLong(7, System.currentTimeMillis())
+                    stmt.executeUpdate()
+
+                    val rs = stmt.generatedKeys
+                    if (rs.next()) {
+                        val characterId = rs.getInt(1)
+                        println("Character created: ${body.name} by user $userId")
+                        call.respond(Character(characterId, body.name, body.charClass, body.level, body.raceName, body.raceDescription, userId))
+                    } else {
+                        call.respondText("Failed to create character", status = io.ktor.http.HttpStatusCode.InternalServerError)
+                    }
+                }
+
+                get("/characters") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+
+                    val characters = mutableListOf<Character>()
+                    val stmt = db.prepareStatement("SELECT id, name, char_class, level, race_name, race_description FROM characters WHERE user_id = ?")
+                    stmt.setString(1, userId)
+                    val rs = stmt.executeQuery()
+
+                    while (rs.next()) {
+                        characters.add(Character(
+                            id = rs.getInt("id"),
+                            name = rs.getString("name"),
+                            charClass = rs.getString("char_class"),
+                            level = rs.getInt("level"),
+                            raceName = rs.getString("race_name"),
+                            raceDescription = rs.getString("race_description"),
+                            userId = userId
+                        ))
+                    }
+
+                    call.respond(characters)
+                }
+
+                // NEU: Character löschen
+                delete("/characters/{characterId}") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val characterId = call.parameters["characterId"]?.toIntOrNull()
+
+                    if (characterId == null) {
+                        call.respondText("Character ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@delete
+                    }
+
+                    // Prüfe ob der Charakter dem Benutzer gehört
+                    val checkStmt = db.prepareStatement("SELECT user_id, campaign_id FROM characters WHERE id = ?")
+                    checkStmt.setInt(1, characterId)
+                    val rs = checkStmt.executeQuery()
+
+                    if (!rs.next()) {
+                        call.respondText("Character not found", status = io.ktor.http.HttpStatusCode.NotFound)
+                        return@delete
+                    }
+
+                    val characterUserId = rs.getString("user_id")
+                    if (characterUserId != userId) {
+                        call.respondText("Not authorized to delete this character", status = io.ktor.http.HttpStatusCode.Forbidden)
+                        return@delete
+                    }
+
+                    // Prüfe ob der Charakter einer Kampagne zugewiesen ist
+                    val campaignId = rs.getString("campaign_id")
+                    if (campaignId != null) {
+                        call.respondText("Cannot delete character assigned to a campaign. Please remove from campaign first.", status = io.ktor.http.HttpStatusCode.Conflict)
+                        return@delete
+                    }
+
+                    // Lösche den Charakter
+                    val deleteStmt = db.prepareStatement("DELETE FROM characters WHERE id = ?")
+                    deleteStmt.setInt(1, characterId)
+                    val rowsDeleted = deleteStmt.executeUpdate()
+
+                    if (rowsDeleted > 0) {
+                        println("Character $characterId deleted by user $userId")
+                        call.respondText("Character deleted successfully")
+                    } else {
+                        call.respondText("Failed to delete character", status = io.ktor.http.HttpStatusCode.InternalServerError)
+                    }
+                }
+
+                get("/campaigns/{campaignId}/characters") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val campaignId = call.parameters["campaignId"]
+
+                    if (campaignId == null) {
+                        call.respondText("Campaign ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@get
+                    }
+
+                    if (!isUserInCampaign(userId, campaignId)) {
+                        call.respondText("Not authorized to view this campaign's characters", status = io.ktor.http.HttpStatusCode.Forbidden)
+                        return@get
+                    }
+
+                    val characters = mutableListOf<Character>()
+                    val stmt = db.prepareStatement("""
+                        SELECT c.id, c.name, c.char_class, c.level, c.race_name, c.race_description, u.username as owner_name
+                        FROM characters c
+                        JOIN users u ON c.user_id = u.id
+                        WHERE c.campaign_id = ?
+                    """.trimIndent())
+
+                    stmt.setString(1, campaignId)
+                    val rs = stmt.executeQuery()
+
+                    while (rs.next()) {
+                        characters.add(Character(
+                            id = rs.getInt("id"),
+                            name = rs.getString("name"),
+                            charClass = rs.getString("char_class"),
+                            level = rs.getInt("level"),
+                            raceName = rs.getString("race_name"),
+                            raceDescription = rs.getString("race_description")
+                        ))
+                    }
+
+                    call.respond(characters)
+                }
+
+                put("/characters/{characterId}/assign/{campaignId}") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val characterId = call.parameters["characterId"]
+                    val campaignId = call.parameters["campaignId"]
+
+                    if (characterId == null || campaignId == null) {
+                        call.respondText("Character ID and Campaign ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@put
+                    }
+
+                    // Check if user owns the character
+                    val checkStmt = db.prepareStatement("SELECT 1 FROM characters WHERE id = ? AND user_id = ?")
+                    checkStmt.setInt(1, characterId.toInt())
+                    checkStmt.setString(2, userId)
+                    val rs = checkStmt.executeQuery()
+
+                    if (!rs.next()) {
+                        call.respondText("Character not found or not owned by user", status = io.ktor.http.HttpStatusCode.NotFound)
+                        return@put
+                    }
+
+                    // Check if user is in the campaign
+                    if (!isUserInCampaign(userId, campaignId)) {
+                        call.respondText("Not authorized to assign character to this campaign", status = io.ktor.http.HttpStatusCode.Forbidden)
+                        return@put
+                    }
+
+                    val updateStmt = db.prepareStatement("UPDATE characters SET campaign_id = ? WHERE id = ?")
+                    updateStmt.setString(1, campaignId)
+                    updateStmt.setInt(2, characterId.toInt())
+                    updateStmt.executeUpdate()
+
+                    call.respondText("Character assigned to campaign successfully")
+                }//ende charakter
+
             }
         }
     }.start(wait = true)
