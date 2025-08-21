@@ -1,5 +1,7 @@
 package com.example.diceapp.screens
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.diceapp.viewModels.Character
 import com.example.diceapp.viewModels.CreateCharacterViewModel
-import com.example.diceapp.viewModels.Race
 
 @Composable
 fun CreateCharacterScreen(
@@ -23,8 +24,13 @@ fun CreateCharacterScreen(
     var name by remember { mutableStateOf("") }
     var charClass by remember { mutableStateOf("") }
     var level by remember { mutableStateOf("") }
+    var race by remember { mutableStateOf("") }
+    var raceDescription by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var selectedRace by remember { mutableStateOf<Race?>(null) }
+
+    // Fullscreen Character Overlay
+    var fullscreenCharacter by remember { mutableStateOf<Character?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
 
     // Characters automatisch laden
     LaunchedEffect(Unit) {
@@ -32,206 +38,197 @@ fun CreateCharacterScreen(
     }
 
     Scaffold { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Top
-        ) {
-            Text("Create Character", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Name
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Name") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Class
-            OutlinedTextField(
-                value = charClass,
-                onValueChange = { charClass = it },
-                label = { Text("Class") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Level (nur Zahlen)
-            OutlinedTextField(
-                value = level,
-                onValueChange = { level = it.filter { c -> c.isDigit() } },
-                label = { Text("Level") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Race Selection
-            RaceSelection(
-                races = viewModel.races,
-                selectedRace = selectedRace,
-                onRaceSelected = { selectedRace = it }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Create Button
-            Button(
-                onClick = {
-                    if (name.isBlank() || charClass.isBlank() || level.isBlank() || selectedRace == null) {
-                        errorMessage = "Please fill all fields"
-                    } else {
-                        viewModel.createCharacter(
-                            context = context,
-                            name = name,
-                            charClass = charClass,
-                            level = level.toInt(),
-                            raceName = selectedRace?.name,
-                            raceDescription = selectedRace?.description,
-                            onSuccess = {
-                                // Formular zurücksetzen
-                                name = ""
-                                charClass = ""
-                                level = ""
-                                selectedRace = null
-                                errorMessage = null
-                            }
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Create")
-            }
-
-            // Zurück Button
-            Button(
-                onClick = { navController.navigateUp() },
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
+                    .padding(padding)
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Top
             ) {
-                Text("Zurück")
-            }
+                Text("Create Character", style = MaterialTheme.typography.headlineMedium)
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Fehlermeldung
-            errorMessage?.let {
+                // --- Form Fields ---
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(it, color = MaterialTheme.colorScheme.error)
+
+                OutlinedTextField(
+                    value = charClass,
+                    onValueChange = { charClass = it },
+                    label = { Text("Class") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = level,
+                    onValueChange = { level = it.filter { c -> c.isDigit() } },
+                    label = { Text("Level") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = race,
+                    onValueChange = { race = it },
+                    label = { Text("Race") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = raceDescription,
+                    onValueChange = { raceDescription = it },
+                    label = { Text("Race Description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // --- Buttons ---
+                Button(
+                    onClick = {
+                        if (name.isBlank() || charClass.isBlank() || level.isBlank() || race.isBlank()) {
+                            errorMessage = "Please fill all fields"
+                        } else {
+                            viewModel.createCharacter(
+                                context = context,
+                                name = name,
+                                charClass = charClass,
+                                level = level.toInt(),
+                                raceName = race,
+                                raceDescription = raceDescription,
+                                onSuccess = {
+                                    name = ""
+                                    charClass = ""
+                                    level = ""
+                                    race = ""
+                                    raceDescription = ""
+                                    errorMessage = null
+                                }
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Create")
+                }
+
+                Button(
+                    onClick = { navController.navigateUp() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                ) {
+                    Text("Zurück")
+                }
+
+                errorMessage?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(it, color = MaterialTheme.colorScheme.error)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Existing Characters", style = MaterialTheme.typography.headlineSmall)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (viewModel.isLoading) {
+                    CircularProgressIndicator()
+                } else if (viewModel.errorMessage != null) {
+                    Text(viewModel.errorMessage ?: "Error")
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(viewModel.characters) { character ->
+                            CharacterCardSmall(
+                                character = character,
+                                onClick = { fullscreenCharacter = character },
+                                onDelete = { id -> viewModel.deleteCharacter(context, id) }
+                            )
+                        }
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Existing Characters
-            Text("Existing Characters", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (viewModel.isLoading) {
-                CircularProgressIndicator()
-            } else if (viewModel.errorMessage != null) {
-                Text(viewModel.errorMessage ?: "Error")
-            } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(viewModel.characters) { character ->
-                        CharacterCard(character = character,
-                            onDelete = { id -> viewModel.deleteCharacter(context, id) })
+            // --- Fullscreen Overlay ---
+            fullscreenCharacter?.let { character ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { fullscreenCharacter = null }
+                        .padding(16.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.fillMaxSize(),
+                        elevation = CardDefaults.cardElevation(8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(24.dp)
+                                .fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(character.name, style = MaterialTheme.typography.headlineLarge)
+                            Text("Class: ${character.charClass}", style = MaterialTheme.typography.titleMedium)
+                            Text("Race: ${character.raceName ?: "Unknown"}", style = MaterialTheme.typography.titleMedium)
+                            Text("Level: ${character.level}", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Race Description: ${character.raceDescription ?: "None"}")
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Button(
+                                onClick = { showDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text("Delete Character")
+                            }
+                        }
                     }
+                }
+
+                // --- Delete Dialog ---
+                if (showDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = { Text("Confirm Delete") },
+                        text = { Text("Are you sure you want to delete ${character.name}?") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                viewModel.deleteCharacter(context, character.id)
+                                showDialog = false
+                                fullscreenCharacter = null
+                            }) { Text("Yes") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDialog = false }) { Text("No") }
+                        }
+                    )
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Kleine Card für die Liste
 @Composable
-fun RaceSelection(
-    races: List<Race>,
-    selectedRace: Race?,
-    onRaceSelected: (Race) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
-    ) {
-        OutlinedTextField(
-            value = selectedRace?.name ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Select Race") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor()
-        )
-
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            races.forEach { race ->
-                DropdownMenuItem(
-                    text = { Text(race.name) },
-                    onClick = {
-                        onRaceSelected(race)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun CharacterCard(character: Character, onDelete: (Int) -> Unit) {
-
-    var showDialog by remember { mutableStateOf(false) }
-
+fun CharacterCardSmall(character: Character, onClick: () -> Unit, onDelete: (Int) -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize()
+            .padding(vertical = 4.dp)
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(character.name, style = MaterialTheme.typography.titleMedium)
             Text("Class: ${character.charClass}")
-            Text("Level: ${character.level}")
             Text("Race: ${character.raceName ?: "Unknown"}")
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = { showDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text("Delete")
-            }
+            Text("Level: ${character.level}")
         }
-    }
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Confirm Delete") },
-            text = { Text("Are you sure you want to delete ${character.name}?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDelete(character.id)
-                        showDialog = false
-                    }
-                ) {
-                    Text("Yes")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDialog = false }
-                ) {
-                    Text("No")
-                }
-            }
-        )
     }
 }

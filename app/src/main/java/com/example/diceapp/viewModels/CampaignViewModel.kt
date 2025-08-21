@@ -19,8 +19,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
-const val PREFS_NAME = "dice_app_prefs"
-const val KEY_AUTH_TOKEN = "auth_token"
+private const val PREFS_NAME = "dice_app_prefs"
+private const val KEY_AUTH_TOKEN = "auth_token"
 private const val TAG = "CampaignViewModel"
 
 class CampaignViewModel : ViewModel() {

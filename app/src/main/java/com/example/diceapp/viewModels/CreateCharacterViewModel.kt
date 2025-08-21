@@ -19,6 +19,11 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import kotlin.collections.plus
 
+
+private const val PREFS_NAME = "dice_app_prefs"
+private const val KEY_AUTH_TOKEN = "auth_token"
+private const val TAG = "CampaignViewModel"
+
 class CreateCharacterViewModel : ViewModel() {
     private val baseUrl = "http://10.0.2.2:8080"
     private val client = OkHttpClient()
@@ -181,6 +186,8 @@ class CreateCharacterViewModel : ViewModel() {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getString(KEY_AUTH_TOKEN, null)
     }
+
+
 }
 
 // Data classes

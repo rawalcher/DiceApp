@@ -647,7 +647,7 @@ fun main() {
                     call.respond(characters)
                 }
 
-                // NEU: Character löschen
+                // Character löschen
                 delete("/characters/{characterId}") {
                     val principal = call.principal<JWTPrincipal>()!!
                     val userId = principal.payload.getClaim("userId").asString()
@@ -768,7 +768,7 @@ fun main() {
                     updateStmt.executeUpdate()
 
                     call.respondText("Character assigned to campaign successfully")
-                }//ende charakter
+                }//ende character
 
             }
         }
