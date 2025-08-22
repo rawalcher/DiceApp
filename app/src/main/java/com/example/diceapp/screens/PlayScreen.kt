@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -175,7 +176,7 @@ private fun ActionsTab(
             ActionButtonData("Character Sheet", Icons.Default.Person, "View character details") {
                 onNavigateToCharacterSheet()
             },
-            ActionButtonData("Inventory", Icons.Default.List, "Manage items") {
+            ActionButtonData("Inventory", Icons.AutoMirrored.Filled.List, "Manage items") {
                 onNavigateToInventory()
             },
             ActionButtonData("Spells", Icons.Default.Star, "View spellbook") {
