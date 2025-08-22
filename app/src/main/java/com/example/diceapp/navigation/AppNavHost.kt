@@ -14,7 +14,6 @@ import androidx.navigation.navArgument
 import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ChatViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel
-import com.example.diceapp.screens.ChatScreen
 import com.example.diceapp.screens.DiceRollScreen
 import com.example.diceapp.screens.MainMenuScreen
 import com.example.diceapp.screens.StatsScreen
@@ -37,6 +36,7 @@ import com.example.diceapp.screens.AddResourceScreen
 import com.example.diceapp.viewModels.ResourceViewModel
 import com.example.diceapp.screens.AdditionalModifiersScreen
 import com.example.diceapp.screens.AddModifierScreen
+import com.example.diceapp.screens.PlayScreen
 import com.example.diceapp.viewModels.CreateCharacterViewModel
 import com.example.diceapp.viewModels.ModifierViewModel
 
@@ -74,15 +74,12 @@ fun AppNavHost(
                         navController = navController
                     )
                 }
-                composable("chat") {
-                    ChatScreen(chatViewModel = chatViewModel)
-                }
                 composable(
                     route = "chat/{campaignId}",
                     arguments = listOf(navArgument("campaignId") { type = NavType.StringType })
                 ) { backStackEntry ->
                     val campaignId = backStackEntry.arguments?.getString("campaignId")
-                    ChatScreen(
+                    PlayScreen(
                         chatViewModel = chatViewModel,
                         campaignId = campaignId
                     )

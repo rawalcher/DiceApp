@@ -1,12 +1,17 @@
 package com.example.diceapp.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.diceapp.components.ChatComponent
 import com.example.diceapp.models.MessageType
@@ -16,11 +21,17 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(
+fun PlayScreen(
     chatViewModel: ChatViewModel,
     campaignId: String? = null,
     autoRefreshEnabled: Boolean = true,
-    refreshIntervalMs: Long = 5000L
+    refreshIntervalMs: Long = 5000L,
+    onNavigateToCharacterSheet: () -> Unit = {},
+    onNavigateToInventory: () -> Unit = {},
+    onNavigateToSpells: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToDiceRoller: () -> Unit = {},
+    onNavigateToNotes: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -28,18 +39,16 @@ fun ChatScreen(
     var isAutoRefreshActive by remember { mutableStateOf(autoRefreshEnabled) }
     var isManualRefreshing by remember { mutableStateOf(false) }
 
-    val tabs = remember { listOf("Chat", "Rolls") }
+    val tabs = remember { listOf("Chat", "Rolls", "Actions") }
 
-    // Set campaign ID if provided
     LaunchedEffect(campaignId) {
         campaignId?.let {
             chatViewModel.setCampaign(it)
-            // Load initial messages
+
             chatViewModel.loadMessages(context, it)
         }
     }
 
-    // Auto-refresh effect
     LaunchedEffect(chatViewModel.currentCampaignId, isAutoRefreshActive) {
         if (isAutoRefreshActive && chatViewModel.currentCampaignId != null) {
             while (isAutoRefreshActive) {
@@ -51,7 +60,6 @@ fun ChatScreen(
         }
     }
 
-    // Stop auto-refresh when screen is not visible or app goes to background
     DisposableEffect(Unit) {
         onDispose {
             isAutoRefreshActive = false
@@ -61,15 +69,13 @@ fun ChatScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Campaign Chat") },
+                title = { Text("Campaign Play") },
                 actions = {
-                    // Manual refresh button
                     IconButton(
                         onClick = {
                             chatViewModel.currentCampaignId?.let { id ->
                                 isManualRefreshing = true
                                 chatViewModel.loadMessages(context, id)
-                                // Reset the refreshing state after a short delay
                                 scope.launch {
                                     delay(1000)
                                     isManualRefreshing = false
@@ -99,7 +105,6 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Tab row with better styling
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 modifier = Modifier.fillMaxWidth()
@@ -113,10 +118,17 @@ fun ChatScreen(
                 }
             }
 
-            // Content based on selected tab
             when (selectedTabIndex) {
                 0 -> ChatTab(chatViewModel)
                 1 -> RollsTab(chatViewModel)
+                2 -> ActionsTab(
+                    onNavigateToCharacterSheet = onNavigateToCharacterSheet,
+                    onNavigateToInventory = onNavigateToInventory,
+                    onNavigateToSpells = onNavigateToSpells,
+                    onNavigateToSettings = onNavigateToSettings,
+                    onNavigateToDiceRoller = onNavigateToDiceRoller,
+                    onNavigateToNotes = onNavigateToNotes
+                )
             }
         }
     }
@@ -147,3 +159,94 @@ private fun RollsTab(chatViewModel: ChatViewModel) {
             .padding(horizontal = 16.dp)
     )
 }
+
+@Composable
+private fun ActionsTab(
+    onNavigateToCharacterSheet: () -> Unit = {},
+    onNavigateToInventory: () -> Unit = {},
+    onNavigateToSpells: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToDiceRoller: () -> Unit = {},
+    onNavigateToNotes: () -> Unit = {}
+) {
+    val actionButtons = remember {
+        // TODO: actually link screens
+        listOf(
+            ActionButtonData("Character Sheet", Icons.Default.Person, "View character details") {
+                onNavigateToCharacterSheet()
+            },
+            ActionButtonData("Inventory", Icons.Default.List, "Manage items") {
+                onNavigateToInventory()
+            },
+            ActionButtonData("Spells", Icons.Default.Star, "View spellbook") {
+                onNavigateToSpells()
+            },
+            ActionButtonData("Dice Roller", Icons.Default.PlayArrow, "Advanced dice rolling") {
+                onNavigateToDiceRoller()
+            },
+            ActionButtonData("Notes", Icons.Default.Edit, "Campaign notes") {
+                onNavigateToNotes()
+            },
+            ActionButtonData("Settings", Icons.Default.Settings, "App settings") {
+                onNavigateToSettings()
+            }
+        )
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(actionButtons) { buttonData ->
+            ActionButton(
+                data = buttonData,
+                onClick = buttonData.onClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionButton(
+    data: ActionButtonData,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = data.icon,
+                contentDescription = data.description,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = data.title,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+private data class ActionButtonData(
+    val title: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val description: String,
+    val onClick: () -> Unit
+)
