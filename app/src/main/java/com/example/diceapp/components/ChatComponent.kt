@@ -28,6 +28,8 @@ fun ChatComponent(
 ) {
     val context = LocalContext.current
     val messages by chatViewModel.messages.collectAsState()
+    val isLoading by chatViewModel.isLoading.collectAsState()
+    val errorMessage by chatViewModel.errorMessage.collectAsState()
     val filteredMessages = messages.filter { it.messageType == messageType }
     var inputText by remember { mutableStateOf("") }
 
@@ -72,7 +74,8 @@ fun ChatComponent(
                         .weight(1f)
                         .padding(end = 8.dp),
                     placeholder = { Text(inputPlaceholder) },
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isLoading
                 )
                 Button(
                     onClick = {
@@ -82,16 +85,13 @@ fun ChatComponent(
                                     chatViewModel.sendMessage(context, inputText, MessageType.CHAT)
                                 }
                                 MessageType.ROLL -> {
-                                    if (inputText.startsWith("/r ")) {
-                                        chatViewModel.postRollCommand(inputText, context)
-                                    } else {
-                                        chatViewModel.sendMessage(context, inputText, MessageType.ROLL)
-                                    }
+                                    chatViewModel.postRollCommand(inputText, context)
                                 }
                             }
                             inputText = ""
                         }
-                    }
+                    },
+                    enabled = !isLoading && inputText.isNotBlank()
                 ) {
                     Text("Send")
                 }
@@ -99,7 +99,7 @@ fun ChatComponent(
         }
     }
 
-    if (chatViewModel.isLoading) {
+    if (isLoading) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -108,8 +108,9 @@ fun ChatComponent(
         }
     }
 
-    chatViewModel.errorMessage?.let { error ->
+    errorMessage?.let { error ->
         LaunchedEffect(error) {
+            // You can add a snackbar or other error handling here
         }
     }
 }
@@ -170,6 +171,7 @@ private fun MessageItem(
                 MessageType.ROLL -> {
                     RollMessageContent(message.content)
                 }
+
                 MessageType.CHAT -> {
                     Text(
                         text = message.content,
@@ -197,6 +199,7 @@ private fun RollMessageContent(content: String) {
                         fontWeight = FontWeight.Bold
                     )
                 }
+
                 else -> {
                     Text(
                         text = line,

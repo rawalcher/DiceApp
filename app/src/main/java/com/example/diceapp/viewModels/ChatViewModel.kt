@@ -13,8 +13,11 @@ import com.example.diceapp.models.MessageType
 import com.example.diceapp.models.SendMessageRequest
 import com.example.diceapp.util.parseAndRollDice
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -22,6 +25,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.concurrent.atomic.AtomicLong
 
 class ChatViewModel : ViewModel() {
     private val baseUrl = "http://10.0.2.2:8080"
@@ -29,33 +33,57 @@ class ChatViewModel : ViewModel() {
     private val json = Json { ignoreUnknownKeys = true }
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
-    val messages: StateFlow<List<ChatMessage>> = _messages
+    val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
-    var isLoading by mutableStateOf(false)
-        private set
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     var currentCampaignId by mutableStateOf<String?>(null)
         private set
 
-    var errorMessage by mutableStateOf<String?>(null)
-        private set
+    private var autoRefreshJob: Job? = null
+    private val lastRefreshTime = AtomicLong(0L)
+    private val minRefreshInterval = 2000L
 
     fun setCampaign(campaignId: String) {
-        currentCampaignId = campaignId
-        _messages.value = emptyList()
+        if (currentCampaignId != campaignId) {
+            currentCampaignId = campaignId
+            _messages.value = emptyList()
+            _errorMessage.value = null
+            stopAutoRefresh()
+        }
     }
 
-    fun loadMessages(context: Context, campaignId: String? = null) {
+    fun stopAutoRefresh() {
+        autoRefreshJob?.cancel()
+        autoRefreshJob = null
+    }
+
+    fun loadMessages(
+        context: Context,
+        campaignId: String? = null,
+        isAutoRefresh: Boolean = false
+    ) {
         val id = campaignId ?: currentCampaignId ?: return
 
+        val currentTime = System.currentTimeMillis()
+        if (isAutoRefresh && currentTime - lastRefreshTime.get() < minRefreshInterval) {
+            return
+        }
+
         viewModelScope.launch {
-            isLoading = true
-            errorMessage = null
+            if (!isAutoRefresh) {
+                _isLoading.value = true
+            }
+            _errorMessage.value = null
 
             try {
                 val token = getToken(context)
                 if (token == null) {
-                    errorMessage = "Not logged in"
+                    _errorMessage.value = "Not logged in"
                     return@launch
                 }
 
@@ -73,21 +101,31 @@ class ChatViewModel : ViewModel() {
                     if (responseBody != null) {
                         val messagesResponse =
                             json.decodeFromString<GetMessagesResponse>(responseBody)
-                        _messages.value = messagesResponse.messages
-                        Log.d("ChatViewModel", "Loaded ${messagesResponse.messages.size} messages")
+
+                        val currentMessages = _messages.value
+                        if (messagesResponse.messages != currentMessages) {
+                            _messages.value = messagesResponse.messages
+                            lastRefreshTime.set(currentTime)
+                            Log.d("ChatViewModel", "Loaded ${messagesResponse.messages.size} messages")
+                        }
                     }
                 } else {
-                    errorMessage = "Failed to load messages: ${response.code}"
-                    Log.e(
-                        "ChatViewModel",
-                        "Failed to load messages: ${response.code} - ${response.message}"
-                    )
+                    val errorMsg = "Failed to load messages: ${response.code}"
+                    if (!isAutoRefresh) {
+                        _errorMessage.value = errorMsg
+                    }
+                    Log.e("ChatViewModel", "$errorMsg - ${response.message}")
                 }
             } catch (e: Exception) {
-                errorMessage = "Error: ${e.localizedMessage}"
+                val errorMsg = "Error: ${e.localizedMessage}"
+                if (!isAutoRefresh) {
+                    _errorMessage.value = errorMsg
+                }
                 Log.e("ChatViewModel", "Error loading messages", e)
             } finally {
-                isLoading = false
+                if (!isAutoRefresh) {
+                    _isLoading.value = false
+                }
             }
         }
     }
@@ -105,7 +143,7 @@ class ChatViewModel : ViewModel() {
             try {
                 val token = getToken(context)
                 if (token == null) {
-                    errorMessage = "Not logged in"
+                    _errorMessage.value = "Not logged in"
                     return@launch
                 }
 
@@ -116,7 +154,7 @@ class ChatViewModel : ViewModel() {
                     isToGM = isToGM
                 )
 
-                val requestBody = json.encodeToString(sendRequest)
+                val requestBody = json.encodeToString(SendMessageRequest.serializer(), sendRequest)
                     .toRequestBody("application/json; charset=utf-8".toMediaType())
 
                 val request = Request.Builder()
@@ -135,22 +173,21 @@ class ChatViewModel : ViewModel() {
                         val newMessage = json.decodeFromString<ChatMessage>(responseBody)
                         _messages.value = _messages.value + newMessage
                         Log.d("ChatViewModel", "Message sent successfully")
+
+                        delay(500)
+                        loadMessages(context, id, isAutoRefresh = true)
                     }
                 } else {
-                    errorMessage = "Failed to send message: ${response.code}"
-                    Log.e(
-                        "ChatViewModel",
-                        "Failed to send message: ${response.code} - ${response.message}"
-                    )
+                    _errorMessage.value = "Failed to send message: ${response.code}"
+                    Log.e("ChatViewModel", "Failed to send message: ${response.code} - ${response.message}")
                 }
             } catch (e: Exception) {
-                errorMessage = "Error: ${e.localizedMessage}"
+                _errorMessage.value = "Error: ${e.localizedMessage}"
                 Log.e("ChatViewModel", "Error sending message", e)
             }
         }
     }
 
-    // TODO: remove
     fun postRollCommand(command: String, context: Context? = null) {
         if (!command.startsWith("/r ")) {
             if (context != null) {
@@ -164,12 +201,6 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-    fun postMessage(text: String, context: Context? = null) {
-        if (context != null) {
-            sendMessage(context, "You: $text", MessageType.CHAT)
-        }
-    }
-
     fun postExternalRoll(description: String, context: Context? = null) {
         if (context != null) {
             sendMessage(context, description, MessageType.ROLL)
@@ -177,7 +208,6 @@ class ChatViewModel : ViewModel() {
     }
 
     fun addMessage(message: String, context: Context? = null) {
-        // Determine message type based on content
         val messageType =
             if (message.contains("🎲") || message.contains("⚔️") || message.startsWith("/ToDM")) {
                 MessageType.ROLL
@@ -203,5 +233,10 @@ class ChatViewModel : ViewModel() {
     private fun getToken(context: Context): String? {
         val prefs = context.getSharedPreferences("dice_app_prefs", Context.MODE_PRIVATE)
         return prefs.getString("auth_token", null)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopAutoRefresh()
     }
 }
