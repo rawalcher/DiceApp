@@ -19,6 +19,7 @@ import com.example.diceapp.viewModels.ModifierViewModel
 import com.example.diceapp.viewModels.LvlUpButtonViewModel
 
 
+
 class MainActivity : ComponentActivity() {
 
     private val chatViewModel: ChatViewModel by viewModels()

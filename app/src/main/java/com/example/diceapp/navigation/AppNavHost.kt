@@ -14,7 +14,7 @@ import androidx.navigation.navArgument
 import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ChatViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel
-import com.example.diceapp.screens.ChatScreen
+import com.example.diceapp.screens.PlayScreen
 import com.example.diceapp.screens.DiceRollScreen
 import com.example.diceapp.screens.MainMenuScreen
 import com.example.diceapp.screens.StatsScreen
@@ -37,7 +37,9 @@ import com.example.diceapp.screens.AddResourceScreen
 import com.example.diceapp.viewModels.ResourceViewModel
 import com.example.diceapp.screens.AdditionalModifiersScreen
 import com.example.diceapp.screens.AddModifierScreen
+import com.example.diceapp.screens.LvlUpButtonScreen
 import com.example.diceapp.viewModels.CreateCharacterViewModel
+import com.example.diceapp.viewModels.LvlUpButtonViewModel
 import com.example.diceapp.viewModels.ModifierViewModel
 
 
@@ -52,7 +54,8 @@ fun AppNavHost(
     spellViewModel: SpellViewModel,
     resourceViewModel: ResourceViewModel,
     modifierViewModel: ModifierViewModel,
-    createCharacterViewModel: CreateCharacterViewModel
+    createCharacterViewModel: CreateCharacterViewModel,
+    lvlUpButtonViewModel: LvlUpButtonViewModel
 ) {
     Scaffold { padding ->
         Box(
@@ -75,14 +78,14 @@ fun AppNavHost(
                     )
                 }
                 composable("chat") {
-                    ChatScreen(chatViewModel = chatViewModel)
+                    PlayScreen(chatViewModel = chatViewModel)
                 }
                 composable(
                     route = "chat/{campaignId}",
                     arguments = listOf(navArgument("campaignId") { type = NavType.StringType })
                 ) { backStackEntry ->
                     val campaignId = backStackEntry.arguments?.getString("campaignId")
-                    ChatScreen(
+                    PlayScreen(
                         chatViewModel = chatViewModel,
                         campaignId = campaignId
                     )
@@ -98,6 +101,13 @@ fun AppNavHost(
                     CreateCharacterScreen(
                         navController = navController,
                         viewModel = createCharacterViewModel
+                    )
+                }
+
+                composable("dm_level_up") {
+                    LvlUpButtonScreen( // oder LvlUpScreen
+                        navController = navController,
+                        viewModel = lvlUpButtonViewModel
                     )
                 }
 

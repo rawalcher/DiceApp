@@ -791,6 +791,8 @@ fun main() {
                     upd.setInt(9, characterId)
                     upd.setString(10, userId)
 
+                    upd.executeUpdate()
+
                     // aktualisierten Datensatz zurückgeben (inkl. Kampagneninfo)
                     val sel = db.prepareStatement(
                         """
