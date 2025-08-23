@@ -16,6 +16,7 @@ import com.example.diceapp.viewModels.CreateCharacterViewModel
 import com.example.diceapp.viewModels.SpellViewModel
 import com.example.diceapp.viewModels.ResourceViewModel
 import com.example.diceapp.viewModels.ModifierViewModel
+import com.example.diceapp.viewModels.LvlUpButtonViewModel
 
 
 class MainActivity : ComponentActivity() {
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
     private val resourceViewModel: ResourceViewModel by viewModels()
     private val modifierViewModel: ModifierViewModel by viewModels()
     private val createCharacterViewModel: CreateCharacterViewModel by viewModels()
+    private val lvlUpButtonViewModel: LvlUpButtonViewModel by viewModels()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +49,8 @@ class MainActivity : ComponentActivity() {
                         spellViewModel = spellViewModel,
                         resourceViewModel = resourceViewModel,
                         modifierViewModel = modifierViewModel,
-                        createCharacterViewModel = createCharacterViewModel
+                        createCharacterViewModel = createCharacterViewModel,
+                        lvlUpButtonViewModel = lvlUpButtonViewModel
 
                     )
                 }

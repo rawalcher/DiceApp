@@ -85,8 +85,12 @@ data class Character(
     val level: Int,
     val raceName: String? = null,
     val raceDescription: String? = null,
+    val classDescription: String? = null,
+    val appearanceDescription: String? = null,
+    val backstory: String? = null,
     val userId: String? = null,
-    val campaignId: String? = null
+    val campaignId: String? = null,
+    val campaignName: String? = null
 )
 
 @Serializable
@@ -95,8 +99,26 @@ data class CreateCharacterRequest(
     val charClass: String,
     val level: Int,
     val raceName: String? = null,
-    val raceDescription: String? = null
+    val raceDescription: String? = null,
+    val classDescription: String? = null,
+    val appearanceDescription: String? = null,
+    val backstory: String? = null
 )
+
+@Serializable
+data class UpdateCharacterRequest(
+    val name: String,
+    val charClass: String,
+    val level: Int,
+    val raceName: String? = null,
+    val raceDescription: String? = null,
+    val classDescription: String? = null,
+    val appearanceDescription: String? = null,
+    val backstory: String? = null
+)
+
+@Serializable
+data class LevelUpResponse(val updated: Int)
 
 val db = DriverManager.getConnection("jdbc:sqlite:data.db")
 val secret = "very-secure-key"
@@ -172,6 +194,9 @@ fun initializeTables() {
                 level INTEGER NOT NULL,
                 race_name TEXT,
                 race_description TEXT,
+                class_description TEXT,
+                appearance_description TEXT,
+                backstory TEXT,
                 user_id TEXT,
                 campaign_id TEXT,
                 created_at INTEGER,
@@ -593,31 +618,84 @@ fun main() {
                     println("Message $messageId deleted by user $userId")
                     call.respondText("Message deleted successfully")
                 }
-                // Character endpoints
+
+                post("/campaigns/{campaignId}/levelup") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val campaignId = call.parameters["campaignId"]
+
+                    if (campaignId == null) {
+                        call.respondText("Campaign ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@post
+                    }
+
+                    // Nur der Owner (DM) darf leveln
+                    val check = db.prepareStatement("SELECT 1 FROM campaigns WHERE id = ? AND owner_id = ?")
+                    check.setString(1, campaignId)
+                    check.setString(2, userId)
+                    val rs = check.executeQuery()
+                    if (!rs.next()) {
+                        call.respondText(
+                            "Only the campaign owner can level up characters in this campaign",
+                            status = io.ktor.http.HttpStatusCode.Forbidden
+                        )
+                        return@post
+                    }
+
+                    // Alle Charaktere in der Kampagne +1 Level
+                    val upd = db.prepareStatement("UPDATE characters SET level = level + 1 WHERE campaign_id = ?")
+                    upd.setString(1, campaignId)
+                    val updatedRows = upd.executeUpdate() // Anzahl geänderte Zeilen
+
+                    call.respond(LevelUpResponse(updated = updatedRows))
+                }
+
+                // Character start
                 post("/characters") {
                     val principal = call.principal<JWTPrincipal>()!!
                     val userId = principal.payload.getClaim("userId").asString()
                     val body = call.receive<CreateCharacterRequest>()
 
                     val stmt = db.prepareStatement("""
-                        INSERT INTO characters (name, char_class, level, race_name, race_description, user_id, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """.trimIndent(), java.sql.Statement.RETURN_GENERATED_KEYS)
+        INSERT INTO characters (
+            name, char_class, level,
+            race_name, race_description,
+            class_description, appearance_description, backstory,   -- NEU
+            user_id, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """.trimIndent(), java.sql.Statement.RETURN_GENERATED_KEYS)
 
                     stmt.setString(1, body.name)
                     stmt.setString(2, body.charClass)
                     stmt.setInt(3, body.level)
                     stmt.setString(4, body.raceName)
                     stmt.setString(5, body.raceDescription)
-                    stmt.setString(6, userId)
-                    stmt.setLong(7, System.currentTimeMillis())
+                    stmt.setString(6, body.classDescription)        // NEU
+                    stmt.setString(7, body.appearanceDescription)   // NEU
+                    stmt.setString(8, body.backstory)               // NEU
+                    stmt.setString(9, userId)
+                    stmt.setLong(10, System.currentTimeMillis())
                     stmt.executeUpdate()
 
                     val rs = stmt.generatedKeys
                     if (rs.next()) {
                         val characterId = rs.getInt(1)
                         println("Character created: ${body.name} by user $userId")
-                        call.respond(Character(characterId, body.name, body.charClass, body.level, body.raceName, body.raceDescription, userId))
+                        call.respond(
+                            Character(
+                                id = characterId,
+                                name = body.name,
+                                charClass = body.charClass,
+                                level = body.level,
+                                raceName = body.raceName,
+                                raceDescription = body.raceDescription,
+                                classDescription = body.classDescription,          // NEU
+                                appearanceDescription = body.appearanceDescription,// NEU
+                                backstory = body.backstory,                        // NEU
+                                userId = userId
+                            )
+                        )
                     } else {
                         call.respondText("Failed to create character", status = io.ktor.http.HttpStatusCode.InternalServerError)
                     }
@@ -628,24 +706,128 @@ fun main() {
                     val userId = principal.payload.getClaim("userId").asString()
 
                     val characters = mutableListOf<Character>()
-                    val stmt = db.prepareStatement("SELECT id, name, char_class, level, race_name, race_description FROM characters WHERE user_id = ?")
+                    val stmt = db.prepareStatement("""
+        SELECT c.id, c.name, c.char_class, c.level,
+               c.race_name, c.race_description,
+               c.class_description, c.appearance_description, c.backstory,   -- NEU
+               camp.id   AS campaign_id,
+               camp.name AS campaign_name
+        FROM characters c
+        LEFT JOIN campaigns camp ON c.campaign_id = camp.id
+        WHERE c.user_id = ?
+    """.trimIndent())
                     stmt.setString(1, userId)
                     val rs = stmt.executeQuery()
 
                     while (rs.next()) {
-                        characters.add(Character(
+                        characters.add(
+                            Character(
+                                id = rs.getInt("id"),
+                                name = rs.getString("name"),
+                                charClass = rs.getString("char_class"),
+                                level = rs.getInt("level"),
+                                raceName = rs.getString("race_name"),
+                                raceDescription = rs.getString("race_description"),
+                                classDescription = rs.getString("class_description"),           // NEU
+                                appearanceDescription = rs.getString("appearance_description"), // NEU
+                                backstory = rs.getString("backstory"),                          // NEU
+                                userId = userId,
+                                campaignId = rs.getString("campaign_id"),
+                                campaignName = rs.getString("campaign_name")
+                            )
+                        )
+                    }
+
+                    call.respond(characters)
+                }
+
+                put("/characters/{characterId}") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val characterId = call.parameters["characterId"]?.toIntOrNull()
+
+                    if (characterId == null) {
+                        call.respondText("Character ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@put
+                    }
+
+                    // gehört der Character dem User?
+                    val checkStmt = db.prepareStatement("SELECT user_id FROM characters WHERE id = ?")
+                    checkStmt.setInt(1, characterId)
+                    val rsCheck = checkStmt.executeQuery()
+                    if (!rsCheck.next()) {
+                        call.respondText("Character not found", status = io.ktor.http.HttpStatusCode.NotFound)
+                        return@put
+                    }
+                    if (rsCheck.getString("user_id") != userId) {
+                        call.respondText("Not authorized", status = io.ktor.http.HttpStatusCode.Forbidden)
+                        return@put
+                    }
+
+                    val body = call.receive<UpdateCharacterRequest>()
+
+                    val upd = db.prepareStatement(
+                        """
+        UPDATE characters
+        SET name = ?, 
+            char_class = ?, 
+            level = ?, 
+            race_name = ?, 
+            race_description = ?, 
+            class_description = ?, 
+            appearance_description = ?, 
+            backstory = ?
+        WHERE id = ? AND user_id = ?
+        """.trimIndent()
+                    )
+                    upd.setString(1, body.name)
+                    upd.setString(2, body.charClass)
+                    upd.setInt(3, body.level)
+                    upd.setString(4, body.raceName)
+                    upd.setString(5, body.raceDescription)
+                    upd.setString(6, body.classDescription)
+                    upd.setString(7, body.appearanceDescription)
+                    upd.setString(8, body.backstory)
+                    upd.setInt(9, characterId)
+                    upd.setString(10, userId)
+
+                    // aktualisierten Datensatz zurückgeben (inkl. Kampagneninfo)
+                    val sel = db.prepareStatement(
+                        """
+        SELECT c.id, c.name, c.char_class, c.level,
+               c.race_name, c.race_description,
+               c.class_description, c.appearance_description, c.backstory,
+               camp.id   AS campaign_id,
+               camp.name AS campaign_name
+        FROM characters c
+        LEFT JOIN campaigns camp ON c.campaign_id = camp.id
+        WHERE c.id = ?
+        """.trimIndent()
+                    )
+                    sel.setInt(1, characterId)
+                    val rs = sel.executeQuery()
+                    rs.next()
+
+                    call.respond(
+                        Character(
                             id = rs.getInt("id"),
                             name = rs.getString("name"),
                             charClass = rs.getString("char_class"),
                             level = rs.getInt("level"),
                             raceName = rs.getString("race_name"),
                             raceDescription = rs.getString("race_description"),
-                            userId = userId
-                        ))
-                    }
-
-                    call.respond(characters)
+                            classDescription = rs.getString("class_description"),
+                            appearanceDescription = rs.getString("appearance_description"),
+                            backstory = rs.getString("backstory"),
+                            userId = userId,
+                            campaignId = rs.getString("campaign_id"),
+                            campaignName = rs.getString("campaign_name")
+                        )
+                    )
                 }
+
+
+
 
                 // Character löschen
                 delete("/characters/{characterId}") {
@@ -768,6 +950,35 @@ fun main() {
                     updateStmt.executeUpdate()
 
                     call.respondText("Character assigned to campaign successfully")
+                }
+                put("/characters/{characterId}/unassign") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val characterId = call.parameters["characterId"]?.toIntOrNull()
+
+                    if (characterId == null) {
+                        call.respondText("Character ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        return@put
+                    }
+
+                    // gehört der Character dem User?
+                    val checkStmt = db.prepareStatement("SELECT user_id FROM characters WHERE id = ?")
+                    checkStmt.setInt(1, characterId)
+                    val rs = checkStmt.executeQuery()
+                    if (!rs.next()) {
+                        call.respondText("Character not found", status = io.ktor.http.HttpStatusCode.NotFound)
+                        return@put
+                    }
+                    if (rs.getString("user_id") != userId) {
+                        call.respondText("Not authorized", status = io.ktor.http.HttpStatusCode.Forbidden)
+                        return@put
+                    }
+
+                    val updateStmt = db.prepareStatement("UPDATE characters SET campaign_id = NULL WHERE id = ?")
+                    updateStmt.setInt(1, characterId)
+                    updateStmt.executeUpdate()
+
+                    call.respondText("Character unassigned from campaign")
                 }//ende character
 
             }

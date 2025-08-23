@@ -59,6 +59,9 @@ fun MainMenuScreen(navController: NavController) {
             Button(onClick = { navController.navigate("modifiers") }) {
                 Text("Additional Modifiers")
             }
+            Button(onClick = { navController.navigate("dm_level_up") }) {
+                Text("DM Level Up")
+            }
         }
     }
 }
