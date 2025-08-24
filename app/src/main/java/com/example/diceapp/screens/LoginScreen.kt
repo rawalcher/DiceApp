@@ -6,13 +6,13 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.diceapp.viewModels.AuthViewModel
 import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -25,21 +25,17 @@ private const val PREFS_NAME = "dice_app_prefs"
 private const val KEY_AUTH_TOKEN = "auth_token"
 private const val TAG = "LoginScreen"
 
-
 private fun saveToken(context: Context, token: String) {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     prefs.edit { putString(KEY_AUTH_TOKEN, token) }
 }
 
-private fun getToken(context: Context): String? {
-    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    return prefs.getString(KEY_AUTH_TOKEN, null)
-}
-
 @Composable
-fun LoginScreen(onLoggedIn: () -> Unit) {
+fun LoginScreen(
+    authViewModel: AuthViewModel,
+    navController: NavController
+) {
     val context = LocalContext.current
-
     val client = remember { OkHttpClient() }
     val baseUrl = "http://10.0.2.2:8080" // Emulator localhost
 
@@ -79,7 +75,10 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
                         try {
                             val token = JSONObject(responseBodyString).getString("token")
                             saveToken(context, token)
-                            onLoggedIn()
+                            authViewModel.onLoginSuccess()
+                            navController.navigate("menu") {
+                                popUpTo("login") { inclusive = true }
+                            }
                         } catch (e: JSONException) {
                             Log.e(TAG, "Error parsing token: $responseBodyString", e)
                             Toast.makeText(context, "Invalid response from server.", Toast.LENGTH_LONG).show()
@@ -103,37 +102,6 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
             } finally {
                 isLoading = false
                 currentAction = null
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        val token = getToken(context)
-        if (token != null) {
-            isLoading = true
-            currentAction = "/me"
-            scope.launch {
-                try {
-                    val request = Request.Builder()
-                        .url("$baseUrl/me")
-                        .header("Authorization", "Bearer $token")
-                        .build()
-                    val response = withContext(Dispatchers.IO) {
-                        client.newCall(request).execute()
-                    }
-                    if (response.isSuccessful) {
-                        onLoggedIn()
-                    } else {
-                        Log.w(TAG, "Auto-login failed: ${response.code}")
-                        Toast.makeText(context, "Session expired.", Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Auto-login error", e)
-                    Toast.makeText(context, "Auto-login network error.", Toast.LENGTH_SHORT).show()
-                } finally {
-                    isLoading = false
-                    currentAction = null
-                }
             }
         }
     }

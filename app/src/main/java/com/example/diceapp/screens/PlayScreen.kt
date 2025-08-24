@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.diceapp.components.ChatComponent
 import com.example.diceapp.models.MessageType
 import com.example.diceapp.viewModels.ChatViewModel
@@ -24,15 +25,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun PlayScreen(
     chatViewModel: ChatViewModel,
+    navController: NavController,
     campaignId: String? = null,
     autoRefreshEnabled: Boolean = true,
-    refreshIntervalMs: Long = 5000L,
-    onNavigateToCharacterSheet: () -> Unit = {},
-    onNavigateToInventory: () -> Unit = {},
-    onNavigateToSpells: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {},
-    onNavigateToDiceRoller: () -> Unit = {},
-    onNavigateToNotes: () -> Unit = {}
+    refreshIntervalMs: Long = 5000L
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -45,7 +41,6 @@ fun PlayScreen(
     LaunchedEffect(campaignId) {
         campaignId?.let {
             chatViewModel.setCampaign(it)
-
             chatViewModel.loadMessages(context, it)
         }
     }
@@ -71,6 +66,14 @@ fun PlayScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Campaign Play") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.List,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
                 actions = {
                     IconButton(
                         onClick = {
@@ -122,14 +125,7 @@ fun PlayScreen(
             when (selectedTabIndex) {
                 0 -> ChatTab(chatViewModel)
                 1 -> RollsTab(chatViewModel)
-                2 -> ActionsTab(
-                    onNavigateToCharacterSheet = onNavigateToCharacterSheet,
-                    onNavigateToInventory = onNavigateToInventory,
-                    onNavigateToSpells = onNavigateToSpells,
-                    onNavigateToSettings = onNavigateToSettings,
-                    onNavigateToDiceRoller = onNavigateToDiceRoller,
-                    onNavigateToNotes = onNavigateToNotes
-                )
+                2 -> ActionsTab(navController = navController)
             }
         }
     }
@@ -162,34 +158,35 @@ private fun RollsTab(chatViewModel: ChatViewModel) {
 }
 
 @Composable
-private fun ActionsTab(
-    onNavigateToCharacterSheet: () -> Unit = {},
-    onNavigateToInventory: () -> Unit = {},
-    onNavigateToSpells: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {},
-    onNavigateToDiceRoller: () -> Unit = {},
-    onNavigateToNotes: () -> Unit = {}
-) {
+private fun ActionsTab(navController: NavController) {
     val actionButtons = remember {
-        // TODO: actually link screens
         listOf(
-            ActionButtonData("Character Sheet", Icons.Default.Person, "View character details") {
-                onNavigateToCharacterSheet()
+            ActionButtonData("Stats", Icons.Default.Star, "View ability scores") {
+                navController.navigate("stats")
             },
-            ActionButtonData("Inventory", Icons.AutoMirrored.Filled.List, "Manage items") {
-                onNavigateToInventory()
+            ActionButtonData("Saving Throws", Icons.Default.Warning, "Roll saving throws") {
+                navController.navigate("saving_throws")
             },
-            ActionButtonData("Spells", Icons.Default.Star, "View spellbook") {
-                onNavigateToSpells()
+            ActionButtonData("Skills", Icons.AutoMirrored.Filled.List, "View and roll skills") {
+                navController.navigate("skills")
             },
-            ActionButtonData("Dice Roller", Icons.Default.PlayArrow, "Advanced dice rolling") {
-                onNavigateToDiceRoller()
+            ActionButtonData("Combat Stats", Icons.Default.Favorite, "HP, AC, and more") {
+                navController.navigate("combat_stats")
             },
-            ActionButtonData("Notes", Icons.Default.Edit, "Campaign notes") {
-                onNavigateToNotes()
+            ActionButtonData("Attacks", Icons.Default.PlayArrow, "Manage attacks") {
+                navController.navigate("attack")
             },
-            ActionButtonData("Settings", Icons.Default.Settings, "App settings") {
-                onNavigateToSettings()
+            ActionButtonData("Spells", Icons.Default.Star, "Manage spellbook") {
+                navController.navigate("spells")
+            },
+            ActionButtonData("Resources", Icons.Default.Settings, "Additional resources") {
+                navController.navigate("resources")
+            },
+            ActionButtonData("Modifiers", Icons.Default.Add, "Additional modifiers") {
+                navController.navigate("modifiers")
+            },
+            ActionButtonData("DM Level Up", Icons.Default.KeyboardArrowUp, "Level up players") {
+                navController.navigate("dm_level_up")
             }
         )
     }

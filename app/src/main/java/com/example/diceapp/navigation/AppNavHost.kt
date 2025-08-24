@@ -11,6 +11,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.diceapp.viewModels.AuthViewModel
 import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ChatViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel
@@ -42,10 +43,10 @@ import com.example.diceapp.viewModels.CreateCharacterViewModel
 import com.example.diceapp.viewModels.LvlUpButtonViewModel
 import com.example.diceapp.viewModels.ModifierViewModel
 
-
 @Composable
 fun AppNavHost(
     navController: NavHostController,
+    authViewModel: AuthViewModel,
     chatViewModel: ChatViewModel,
     characterViewModel: CharacterViewModel,
     diceRollViewModel: DiceRollViewModel,
@@ -65,11 +66,14 @@ fun AppNavHost(
         ) {
             NavHost(
                 navController = navController,
-                startDestination = "menu",
+                startDestination = "login",
                 modifier = Modifier.fillMaxSize()
             ) {
                 composable("menu") {
-                    MainMenuScreen(navController = navController)
+                    MainMenuScreen(
+                        navController = navController,
+                        authViewModel = authViewModel
+                    )
                 }
                 composable("stats") {
                     StatsScreen(
@@ -78,7 +82,10 @@ fun AppNavHost(
                     )
                 }
                 composable("chat") {
-                    PlayScreen(chatViewModel = chatViewModel)
+                    PlayScreen(
+                        chatViewModel = chatViewModel,
+                        navController = navController
+                    )
                 }
                 composable(
                     route = "chat/{campaignId}",
@@ -87,6 +94,7 @@ fun AppNavHost(
                     val campaignId = backStackEntry.arguments?.getString("campaignId")
                     PlayScreen(
                         chatViewModel = chatViewModel,
+                        navController = navController,
                         campaignId = campaignId
                     )
                 }
@@ -105,7 +113,7 @@ fun AppNavHost(
                 }
 
                 composable("dm_level_up") {
-                    LvlUpButtonScreen( // oder LvlUpScreen
+                    LvlUpButtonScreen(
                         navController = navController,
                         viewModel = lvlUpButtonViewModel
                     )
@@ -136,11 +144,8 @@ fun AppNavHost(
                 }
                 composable("login") {
                     LoginScreen(
-                        onLoggedIn = {
-                            navController.navigate("menu") {
-                                popUpTo("login") { inclusive = true }
-                            }
-                        }
+                        authViewModel = authViewModel,
+                        navController = navController
                     )
                 }
                 composable("attack") {
@@ -167,10 +172,16 @@ fun AppNavHost(
                     )
                 }
                 composable("modifiers") {
-                    AdditionalModifiersScreen(navController = navController, modifierViewModel = modifierViewModel)
+                    AdditionalModifiersScreen(
+                        navController = navController,
+                        modifierViewModel = modifierViewModel
+                    )
                 }
                 composable("add_modifier") {
-                    AddModifierScreen(navController = navController, modifierViewModel = modifierViewModel)
+                    AddModifierScreen(
+                        navController = navController,
+                        modifierViewModel = modifierViewModel
+                    )
                 }
 
                 composable("add_resource") {

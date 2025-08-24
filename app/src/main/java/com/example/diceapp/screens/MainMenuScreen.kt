@@ -5,11 +5,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.diceapp.viewModels.AuthViewModel
 
 @Composable
-fun MainMenuScreen(navController: NavController) {
+fun MainMenuScreen(navController: NavController, authViewModel: AuthViewModel) {
+    val context = LocalContext.current
+
     Scaffold{ paddingValues ->
         Column(
             modifier = Modifier
@@ -50,9 +54,6 @@ fun MainMenuScreen(navController: NavController) {
             Button(onClick = { navController.navigate("spells") }) {
                 Text("Spells")
             }
-            Button(onClick = { navController.navigate("login") }) {
-                Text("Login")
-            }
             Button(onClick = { navController.navigate("resources") }) {
                 Text("Additional Resources")
             }
@@ -61,6 +62,22 @@ fun MainMenuScreen(navController: NavController) {
             }
             Button(onClick = { navController.navigate("dm_level_up") }) {
                 Text("DM Level Up")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedButton(
+                onClick = {
+                    authViewModel.logout(context)
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Logout")
             }
         }
     }
