@@ -63,30 +63,20 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-
-                    if (!authViewModel.isCheckingAuth) {
-                        AppNavHost(
-                            navController = navController,
-                            authViewModel = authViewModel,
-                            chatViewModel = chatViewModel,
-                            characterViewModel = characterViewModel,
-                            diceRollViewModel = diceRollViewModel,
-                            campaignViewModel = campaignViewModel,
-                            attackViewModel = attackViewModel,
-                            spellViewModel = spellViewModel,
-                            resourceViewModel = resourceViewModel,
-                            modifierViewModel = modifierViewModel,
-                            createCharacterViewModel = createCharacterViewModel,
-                            lvlUpButtonViewModel = lvlUpButtonViewModel
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
+                    AppNavHost(
+                        navController = navController,
+                        authViewModel = authViewModel,
+                        chatViewModel = chatViewModel,
+                        characterViewModel = characterViewModel,
+                        diceRollViewModel = diceRollViewModel,
+                        campaignViewModel = campaignViewModel,
+                        attackViewModel = attackViewModel,
+                        spellViewModel = spellViewModel,
+                        resourceViewModel = resourceViewModel,
+                        modifierViewModel = modifierViewModel,
+                        createCharacterViewModel = createCharacterViewModel,
+                        lvlUpButtonViewModel = lvlUpButtonViewModel
+                    )
                 }
             }
         }
