@@ -828,9 +828,6 @@ fun main() {
                     )
                 }
 
-
-
-
                 // Character löschen
                 delete("/characters/{characterId}") {
                     val principal = call.principal<JWTPrincipal>()!!
@@ -913,6 +910,67 @@ fun main() {
                             raceName = rs.getString("race_name"),
                             raceDescription = rs.getString("race_description")
                         ))
+                    }
+
+                    call.respond(characters)
+                }
+
+                get("/campaigns/{campaignId}/characters/mine") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.payload.getClaim("userId").asString()
+                    val campaignId = call.parameters["campaignId"]
+
+                    if (campaignId == null) {
+                        call.respondText(
+                            "Campaign ID required",
+                            status = io.ktor.http.HttpStatusCode.BadRequest
+                        )
+                        return@get
+                    }
+
+                    if (!isUserInCampaign(userId, campaignId)) {
+                        call.respondText(
+                            "Not authorized to view this campaign",
+                            status = io.ktor.http.HttpStatusCode.Forbidden
+                        )
+                        return@get
+                    }
+
+                    val characters = mutableListOf<Character>()
+                    val stmt = db.prepareStatement(
+                        """
+                        SELECT c.id, c.name, c.char_class, c.level,
+                               c.race_name, c.race_description,
+                               c.class_description, c.appearance_description, c.backstory,
+                               camp.id AS campaign_id,
+                               camp.name AS campaign_name
+                        FROM characters c
+                        LEFT JOIN campaigns camp ON c.campaign_id = camp.id
+                        WHERE c.user_id = ? AND c.campaign_id = ?
+                    """.trimIndent()
+                    )
+
+                    stmt.setString(1, userId)
+                    stmt.setString(2, campaignId)
+                    val rs = stmt.executeQuery()
+
+                    while (rs.next()) {
+                        characters.add(
+                            Character(
+                                id = rs.getInt("id"),
+                                name = rs.getString("name"),
+                                charClass = rs.getString("char_class"),
+                                level = rs.getInt("level"),
+                                raceName = rs.getString("race_name"),
+                                raceDescription = rs.getString("race_description"),
+                                classDescription = rs.getString("class_description"),
+                                appearanceDescription = rs.getString("appearance_description"),
+                                backstory = rs.getString("backstory"),
+                                userId = userId,
+                                campaignId = rs.getString("campaign_id"),
+                                campaignName = rs.getString("campaign_name")
+                            )
+                        )
                     }
 
                     call.respond(characters)

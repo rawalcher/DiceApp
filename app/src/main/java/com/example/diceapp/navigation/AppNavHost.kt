@@ -84,6 +84,7 @@ fun AppNavHost(
                 composable("chat") {
                     PlayScreen(
                         chatViewModel = chatViewModel,
+                        characterViewModel = characterViewModel,
                         navController = navController
                     )
                 }
@@ -94,6 +95,7 @@ fun AppNavHost(
                     val campaignId = backStackEntry.arguments?.getString("campaignId")
                     PlayScreen(
                         chatViewModel = chatViewModel,
+                        characterViewModel = characterViewModel,
                         navController = navController,
                         campaignId = campaignId
                     )

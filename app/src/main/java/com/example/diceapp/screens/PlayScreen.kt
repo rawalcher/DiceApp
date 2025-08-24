@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.diceapp.components.ChatComponent
 import com.example.diceapp.models.MessageType
+import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ChatViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -25,6 +26,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun PlayScreen(
     chatViewModel: ChatViewModel,
+    characterViewModel: CharacterViewModel,
     navController: NavController,
     campaignId: String? = null,
     autoRefreshEnabled: Boolean = true,
@@ -42,6 +44,7 @@ fun PlayScreen(
         campaignId?.let {
             chatViewModel.setCampaign(it)
             chatViewModel.loadMessages(context, it)
+            characterViewModel.loadCharacterForCampaign(context, it)
         }
     }
 

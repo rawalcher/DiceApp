@@ -25,46 +25,25 @@ fun MainMenuScreen(navController: NavController, authViewModel: AuthViewModel) {
         ) {
             Text("Dice App", style = MaterialTheme.typography.headlineMedium)
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Button(onClick = { navController.navigate("campaigns") }) {
-                Text("Campaigns")
+            Button(
+                onClick = { navController.navigate("campaigns") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Join/View Campaigns")
             }
-            Button(onClick = { navController.navigate("stats") }) {
-                Text("Stats")
-            }
-            Button(onClick = { navController.navigate("saving_throws") }) {
-                Text("Saving Throws")
-            }
-            Button(onClick = { navController.navigate("skills") }) {
-                Text("Skills")
-            }
-            Button(onClick = { navController.navigate("create_character") }) {
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { navController.navigate("create_character") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Create Character")
             }
-            Button(onClick = { navController.navigate("combat_stats") }) {
-                Text("Combat Stats")
-            }
-            Button(onClick = { navController.navigate("chat") }) {
-                Text("Chat")
-            }
-            Button(onClick = { navController.navigate("attack") }) {
-                Text("Attacks")
-            }
-            Button(onClick = { navController.navigate("spells") }) {
-                Text("Spells")
-            }
-            Button(onClick = { navController.navigate("resources") }) {
-                Text("Additional Resources")
-            }
-            Button(onClick = { navController.navigate("modifiers") }) {
-                Text("Additional Modifiers")
-            }
-            Button(onClick = { navController.navigate("dm_level_up") }) {
-                Text("DM Level Up")
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedButton(
                 onClick = {
@@ -75,7 +54,8 @@ fun MainMenuScreen(navController: NavController, authViewModel: AuthViewModel) {
                 },
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
-                )
+                ),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Logout")
             }
