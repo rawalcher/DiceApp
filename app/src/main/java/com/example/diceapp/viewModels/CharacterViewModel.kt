@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.diceapp.models.MessageType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -280,7 +281,7 @@ class CharacterViewModel : ViewModel() {
 
     fun applyDeathSaveResult(roll: Int, chatViewModel: ChatViewModel) {
         val message = "/ToDM 🎲 Death Save: Rolled 1d20 = $roll"
-        chatViewModel.addMessage(message)
+        chatViewModel.addMessage(message, MessageType.ROLL, currentCharacterData?.campaignId)
 
         when {
             roll == 1 -> {

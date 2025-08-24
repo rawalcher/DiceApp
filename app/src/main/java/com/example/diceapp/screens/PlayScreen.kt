@@ -34,7 +34,7 @@ fun PlayScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
     var isAutoRefreshActive by remember { mutableStateOf(autoRefreshEnabled) }
     var isManualRefreshing by remember { mutableStateOf(false) }
 

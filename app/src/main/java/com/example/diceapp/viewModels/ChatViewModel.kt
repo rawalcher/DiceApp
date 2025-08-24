@@ -207,28 +207,15 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-    fun addMessage(message: String, context: Context? = null) {
-        val messageType =
-            if (message.contains("🎲") || message.contains("⚔️") || message.startsWith("/ToDM")) {
-                MessageType.ROLL
-            } else {
-                MessageType.CHAT
-            }
+    fun addMessage(message: String, messageType: MessageType, campaignId: String?, context: Context? = null) {
 
         val isToGM = message.startsWith("/ToDM")
         val cleanContent = if (isToGM) message.removePrefix("/ToDM ") else message
 
         if (context != null) {
-            sendMessage(context, cleanContent, messageType, isToGM)
+            sendMessage(context, cleanContent, messageType, isToGM, campaignId)
         }
     }
-
-    fun getFilteredMessages(messageType: MessageType): List<ChatMessage> {
-        return _messages.value.filter { it.messageType == messageType }
-    }
-
-    fun getChatMessages(): List<ChatMessage> = getFilteredMessages(MessageType.CHAT)
-    fun getRollMessages(): List<ChatMessage> = getFilteredMessages(MessageType.ROLL)
 
     private fun getToken(context: Context): String? {
         val prefs = context.getSharedPreferences("dice_app_prefs", Context.MODE_PRIVATE)

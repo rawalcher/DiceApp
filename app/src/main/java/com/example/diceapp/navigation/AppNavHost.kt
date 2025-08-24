@@ -5,12 +5,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.diceapp.models.CampaignSelection
+import com.example.diceapp.models.LocalCampaignSelection
 import com.example.diceapp.viewModels.AuthViewModel
 import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ChatViewModel
@@ -64,205 +68,218 @@ fun AppNavHost(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            NavHost(
-                navController = navController,
-                startDestination = "login",
-                modifier = Modifier.fillMaxSize()
-            ) {
-                composable("menu") {
-                    MainMenuScreen(
-                        navController = navController,
-                        authViewModel = authViewModel
-                    )
-                }
-                composable("stats") {
-                    StatsScreen(
-                        characterViewModel = characterViewModel,
-                        navController = navController
-                    )
-                }
-                composable("chat") {
-                    PlayScreen(
-                        chatViewModel = chatViewModel,
-                        characterViewModel = characterViewModel,
-                        navController = navController
-                    )
-                }
-                composable(
-                    route = "chat/{campaignId}",
-                    arguments = listOf(navArgument("campaignId") { type = NavType.StringType })
-                ) { backStackEntry ->
-                    val campaignId = backStackEntry.arguments?.getString("campaignId")
-                    PlayScreen(
-                        chatViewModel = chatViewModel,
-                        characterViewModel = characterViewModel,
-                        navController = navController,
-                        campaignId = campaignId
-                    )
-                }
-                composable("saving_throws") {
-                    SavingThrowsScreen(
-                        navController = navController,
-                        characterViewModel = characterViewModel
-                    )
-                }
+            // to easily access campaign id from all screens without a dedicated VM
+            val selection = remember { CampaignSelection() }
 
-                composable("create_character") {
-                    CreateCharacterScreen(
-                        navController = navController,
-                        viewModel = createCharacterViewModel
-                    )
-                }
+            CompositionLocalProvider(LocalCampaignSelection provides selection) {
 
-                composable("dm_level_up") {
-                    LvlUpButtonScreen(
-                        navController = navController,
-                        viewModel = lvlUpButtonViewModel
-                    )
-                }
+                NavHost(
+                    navController = navController,
+                    startDestination = "login",
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    composable("menu") {
+                        MainMenuScreen(
+                            navController = navController,
+                            authViewModel = authViewModel
+                        )
+                    }
+                    composable("stats") {
+                        StatsScreen(
+                            characterViewModel = characterViewModel,
+                            navController = navController
+                        )
+                    }
+                    composable("chat") {
+                        PlayScreen(
+                            chatViewModel = chatViewModel,
+                            characterViewModel = characterViewModel,
+                            navController = navController
+                        )
+                    }
+                    composable(
+                        route = "chat/{campaignId}",
+                        arguments = listOf(navArgument("campaignId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val campaignId = backStackEntry.arguments?.getString("campaignId")
+                        PlayScreen(
+                            chatViewModel = chatViewModel,
+                            characterViewModel = characterViewModel,
+                            navController = navController,
+                            campaignId = campaignId
+                        )
+                    }
+                    composable("saving_throws") {
+                        SavingThrowsScreen(
+                            navController = navController,
+                            characterViewModel = characterViewModel
+                        )
+                    }
 
-                composable("skills") {
-                    SkillsScreen(
-                        navController = navController,
-                        characterViewModel = characterViewModel
-                    )
-                }
-                composable("combat_stats") {
-                    CombatStatsScreen(
-                        characterViewModel = characterViewModel,
-                        chatViewModel = chatViewModel,
-                        diceRollViewModel = diceRollViewModel,
-                        resourceViewModel = resourceViewModel,
-                        spellViewModel = spellViewModel,
-                        onNavigateToChat = { navController.navigate("chat") }
-                    )
-                }
+                    composable("create_character") {
+                        CreateCharacterScreen(
+                            navController = navController,
+                            viewModel = createCharacterViewModel
+                        )
+                    }
 
-                composable("campaigns") {
-                    CampaignsScreen(
-                        navController = navController,
-                        campaignViewModel = campaignViewModel
-                    )
-                }
-                composable("login") {
-                    LoginScreen(
-                        authViewModel = authViewModel,
-                        navController = navController
-                    )
-                }
-                composable("attack") {
-                    AttackScreen(
-                        attackViewModel = attackViewModel,
-                        diceRollViewModel = diceRollViewModel,
-                        chatViewModel = chatViewModel,
-                        navController = navController,
-                    )
-                }
-                composable("spells") {
-                    SpellsScreen(
-                        navController = navController,
-                        spellViewModel = spellViewModel,
-                        chatViewModel = chatViewModel,
-                        diceRollViewModel = diceRollViewModel,
-                        spellSaveDC = characterViewModel.spellSaveDC
-                    )
-                }
-                composable("resources") {
-                    AdditionalResourcesScreen(
-                        navController = navController,
-                        resourceViewModel = resourceViewModel
-                    )
-                }
-                composable("modifiers") {
-                    AdditionalModifiersScreen(
-                        navController = navController,
-                        modifierViewModel = modifierViewModel
-                    )
-                }
-                composable("add_modifier") {
-                    AddModifierScreen(
-                        navController = navController,
-                        modifierViewModel = modifierViewModel
-                    )
-                }
+                    composable("dm_level_up") {
+                        LvlUpButtonScreen(
+                            navController = navController,
+                            viewModel = lvlUpButtonViewModel
+                        )
+                    }
 
-                composable("add_resource") {
-                    AddResourceScreen(
-                        navController = navController,
-                        resourceViewModel = resourceViewModel
-                    )
-                }
+                    composable("skills") {
+                        SkillsScreen(
+                            navController = navController,
+                            characterViewModel = characterViewModel
+                        )
+                    }
+                    composable("combat_stats") {
+                        CombatStatsScreen(
+                            characterViewModel = characterViewModel,
+                            chatViewModel = chatViewModel,
+                            diceRollViewModel = diceRollViewModel,
+                            resourceViewModel = resourceViewModel,
+                            spellViewModel = spellViewModel,
+                            onNavigateToChat = { navController.navigate("chat") }
+                        )
+                    }
 
-                composable("add_attack") {
-                    AddAttackScreen(
-                        navController = navController,
-                        abilities = characterViewModel.abilities,
-                        proficiencyBonus = characterViewModel.proficiencyBonus,
-                        onAddAttack = { name, toHit, damageDice, damageModifier, damageType ->
-                            attackViewModel.addAttack(name, toHit, damageDice, damageModifier, damageType)
-                        }
-                    )
-                }
-                composable("add_spell") {
-                    AddSpellScreen(
-                        navController = navController,
-                        abilities = characterViewModel.abilities,
-                        proficiencyBonus = characterViewModel.proficiencyBonus,
-                        spellSaveDC = characterViewModel.spellSaveDC,
-                        onAddSpell = { name, level, castingTime, range, components,
-                                       concentration, ritual, attackBonus, saveDC, saveAbility,
-                                       damageDice, damageModifier, damageType, description ->
-                            spellViewModel.addSpell(
-                                Spell(
-                                    name = name,
-                                    level = level,
-                                    castingTime = castingTime,
-                                    range = range,
-                                    components = components,
-                                    concentration = concentration,
-                                    ritual = ritual,
-                                    attackBonus = attackBonus,
-                                    saveDC = saveDC,
-                                    saveAbility = saveAbility,
-                                    damageDice = damageDice,
-                                    damageModifier = damageModifier,
-                                    damageType = damageType,
-                                    description = description
+                    composable("campaigns") {
+                        CampaignsScreen(
+                            navController = navController,
+                            campaignViewModel = campaignViewModel
+                        )
+                    }
+                    composable("login") {
+                        LoginScreen(
+                            authViewModel = authViewModel,
+                            navController = navController
+                        )
+                    }
+                    composable("attack") {
+                        AttackScreen(
+                            attackViewModel = attackViewModel,
+                            diceRollViewModel = diceRollViewModel,
+                            chatViewModel = chatViewModel,
+                            navController = navController,
+                        )
+                    }
+                    composable("spells") {
+                        SpellsScreen(
+                            navController = navController,
+                            spellViewModel = spellViewModel,
+                            chatViewModel = chatViewModel,
+                            diceRollViewModel = diceRollViewModel,
+                            spellSaveDC = characterViewModel.spellSaveDC
+                        )
+                    }
+                    composable("resources") {
+                        AdditionalResourcesScreen(
+                            navController = navController,
+                            resourceViewModel = resourceViewModel
+                        )
+                    }
+                    composable("modifiers") {
+                        AdditionalModifiersScreen(
+                            navController = navController,
+                            modifierViewModel = modifierViewModel
+                        )
+                    }
+                    composable("add_modifier") {
+                        AddModifierScreen(
+                            navController = navController,
+                            modifierViewModel = modifierViewModel
+                        )
+                    }
+
+                    composable("add_resource") {
+                        AddResourceScreen(
+                            navController = navController,
+                            resourceViewModel = resourceViewModel
+                        )
+                    }
+
+                    composable("add_attack") {
+                        AddAttackScreen(
+                            navController = navController,
+                            abilities = characterViewModel.abilities,
+                            proficiencyBonus = characterViewModel.proficiencyBonus,
+                            onAddAttack = { name, toHit, damageDice, damageModifier, damageType ->
+                                attackViewModel.addAttack(
+                                    name,
+                                    toHit,
+                                    damageDice,
+                                    damageModifier,
+                                    damageType
                                 )
-                            )
-                        }
-                    )
-                }
-                composable(
-                    route = "dice_roll/{label}/{modifier}/{proficiencyBonus}/{type}",
-                    arguments = listOf(
-                        navArgument("label") { type = NavType.StringType },
-                        navArgument("modifier") { type = NavType.IntType },
-                        navArgument("proficiencyBonus") {
-                            type = NavType.IntType
-                            defaultValue = 0
-                        },
-                        navArgument("type") {
-                            type = NavType.StringType
-                            defaultValue = "Check"
-                        }
-                    )
-                ) { backStackEntry ->
-                    val label = backStackEntry.arguments?.getString("label") ?: "Roll"
-                    val modifier = backStackEntry.arguments?.getInt("modifier") ?: 0
-                    val proficiencyBonus = backStackEntry.arguments?.getInt("proficiencyBonus") ?: 0
-                    val type = backStackEntry.arguments?.getString("type") ?: "Check"
+                            }
+                        )
+                    }
+                    composable("add_spell") {
+                        AddSpellScreen(
+                            navController = navController,
+                            abilities = characterViewModel.abilities,
+                            proficiencyBonus = characterViewModel.proficiencyBonus,
+                            spellSaveDC = characterViewModel.spellSaveDC,
+                            onAddSpell = { name, level, castingTime, range, components,
+                                           concentration, ritual, attackBonus, saveDC, saveAbility,
+                                           damageDice, damageModifier, damageType, description ->
+                                spellViewModel.addSpell(
+                                    Spell(
+                                        name = name,
+                                        level = level,
+                                        castingTime = castingTime,
+                                        range = range,
+                                        components = components,
+                                        concentration = concentration,
+                                        ritual = ritual,
+                                        attackBonus = attackBonus,
+                                        saveDC = saveDC,
+                                        saveAbility = saveAbility,
+                                        damageDice = damageDice,
+                                        damageModifier = damageModifier,
+                                        damageType = damageType,
+                                        description = description
+                                    )
+                                )
+                            }
+                        )
+                    }
+                    composable(
+                        route = "dice_roll/{label}/{modifier}/{proficiencyBonus}/{type}",
+                        arguments = listOf(
+                            navArgument("label") { type = NavType.StringType },
+                            navArgument("modifier") { type = NavType.IntType },
+                            navArgument("proficiencyBonus") {
+                                type = NavType.IntType
+                                defaultValue = 0
+                            },
+                            navArgument("type") {
+                                type = NavType.StringType
+                                defaultValue = "Check"
+                            }
+                        )
+                    ) { backStackEntry ->
+                        val label = backStackEntry.arguments?.getString("label") ?: "Roll"
+                        val modifier = backStackEntry.arguments?.getInt("modifier") ?: 0
+                        val proficiencyBonus =
+                            backStackEntry.arguments?.getInt("proficiencyBonus") ?: 0
+                        val type = backStackEntry.arguments?.getString("type") ?: "Check"
 
-                    DiceRollScreen(
-                        rollLabel = label,
-                        modifier = modifier,
-                        proficiencyBonus = proficiencyBonus,
-                        type = type,
-                        navController = navController,
-                        chatViewModel = chatViewModel,
-                        diceRollViewModel = diceRollViewModel,
-                        modifierViewModel = modifierViewModel
-                    )
+                        DiceRollScreen(
+                            rollLabel = label,
+                            modifier = modifier,
+                            proficiencyBonus = proficiencyBonus,
+                            type = type,
+                            navController = navController,
+                            chatViewModel = chatViewModel,
+                            diceRollViewModel = diceRollViewModel,
+                            modifierViewModel = modifierViewModel
+                        )
+                    }
                 }
             }
         }

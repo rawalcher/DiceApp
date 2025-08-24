@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.diceapp.viewModels.CampaignViewModel
 import com.example.diceapp.models.Campaign
+import com.example.diceapp.models.LocalCampaignSelection
 
 @Composable
 fun CampaignsScreen(
@@ -48,6 +49,7 @@ fun CampaignsScreen(
 ) {
     val context = LocalContext.current
     var showCreateDialog by remember { mutableStateOf(false) }
+    val selection = LocalCampaignSelection.current
 
     LaunchedEffect(Unit) {
         campaignViewModel.loadCampaigns(context)
@@ -101,6 +103,7 @@ fun CampaignsScreen(
                         CampaignCard(
                             campaign = campaign,
                             onJoin = {
+                                selection.id = campaign.id
                                 if (campaign.isJoined) {
                                     campaignViewModel.selectCampaign(campaign)
                                     navController.navigate("chat/${campaign.id}")

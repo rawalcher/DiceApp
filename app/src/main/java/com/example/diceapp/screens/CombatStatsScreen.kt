@@ -17,6 +17,8 @@ import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ChatViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel
 import com.example.diceapp.components.EditDialog
+import com.example.diceapp.models.LocalCampaignSelection
+import com.example.diceapp.models.MessageType
 import com.example.diceapp.viewModels.ResourceViewModel
 import com.example.diceapp.viewModels.SpellViewModel
 
@@ -34,6 +36,7 @@ fun CombatStatsScreen(
     val borderColor = Color.White
     val cardColor = Color.Black
     val textColor = Color.White
+    val currentCampaignId = LocalCampaignSelection.current.id
     val successes by characterViewModel.deathSaveSuccesses
     val failures by characterViewModel.deathSaveFailures
 
@@ -106,7 +109,7 @@ fun CombatStatsScreen(
                             modifier = characterViewModel.initiative,
                             type = "Roll"
                         )
-                        chatViewModel.addMessage(message)
+                        chatViewModel.addMessage(message, MessageType.ROLL, currentCampaignId)
                         onNavigateToChat()
                     }
                 )
@@ -179,7 +182,7 @@ fun CombatStatsScreen(
                                         hitDieType = characterViewModel.hitDieType,
                                         conModifier = conMod
                                     )
-                                    chatViewModel.addMessage(message)
+                                    chatViewModel.addMessage(message, MessageType.ROLL, currentCampaignId)
                                     onNavigateToChat()
                                 }
                         ) {

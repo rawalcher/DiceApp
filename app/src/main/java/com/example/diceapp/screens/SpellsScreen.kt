@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.diceapp.components.EditDialog
+import com.example.diceapp.models.LocalCampaignSelection
+import com.example.diceapp.models.MessageType
 import com.example.diceapp.viewModels.ChatViewModel
 import com.example.diceapp.viewModels.DiceRollViewModel
 import com.example.diceapp.viewModels.SpellViewModel
@@ -36,6 +38,7 @@ fun SpellsScreen(
 ) {
     val spells = spellViewModel.spells
     val slots = spellViewModel.spellSlots
+    val currentCampaignId = LocalCampaignSelection.current.id
     var isRemoveMode by remember { mutableStateOf(false) }
 
     Scaffold { padding ->
@@ -95,7 +98,7 @@ fun SpellsScreen(
                                     damageModifier = spell.damageModifier,
                                     damageType = spell.damageType
                                 )
-                                chatViewModel.addMessage(msg)
+                                chatViewModel.addMessage(msg, MessageType.ROLL, currentCampaignId)
                                 navController.navigate("chat")
                             }
                         },
@@ -104,7 +107,7 @@ fun SpellsScreen(
                             val ability = spell.saveAbility
                             if (dc != null) {
                                 val header = "**${spell.name}** — target makes a ${ability ?: "—"} save (DC $dc)."
-                                chatViewModel.addMessage(header)
+                                chatViewModel.addMessage(header, MessageType.ROLL, currentCampaignId)
                             }
                             if (spell.damageDice != null && spell.damageType != null) {
                                 val dmgMsg = diceRollViewModel.rollDamage(
@@ -113,13 +116,13 @@ fun SpellsScreen(
                                     damageModifier = spell.damageModifier,
                                     damageType = spell.damageType
                                 )
-                                chatViewModel.addMessage(dmgMsg)
+                                chatViewModel.addMessage(dmgMsg, MessageType.ROLL, currentCampaignId)
                             }
-                            chatViewModel.addMessage(buildSpellDescription(spell))
+                            chatViewModel.addMessage(buildSpellDescription(spell), MessageType.ROLL, currentCampaignId)
                             navController.navigate("chat")
                         },
                         onPostDescription = {
-                            chatViewModel.addMessage(buildSpellDescription(spell))
+                            chatViewModel.addMessage(buildSpellDescription(spell), MessageType.ROLL, currentCampaignId)
                             navController.navigate("chat")
                         },
                         showRemoveIcon = isRemoveMode,

@@ -84,8 +84,12 @@ fun ChatComponent(
                                 MessageType.CHAT -> {
                                     chatViewModel.sendMessage(context, inputText, MessageType.CHAT)
                                 }
+
                                 MessageType.ROLL -> {
-                                    chatViewModel.postRollCommand(inputText, context)
+                                    // ignore wrong user input
+                                    if (inputText.startsWith("/r ")) {
+                                        chatViewModel.postRollCommand(inputText, context)
+                                    }
                                 }
                             }
                             inputText = ""
@@ -110,7 +114,6 @@ fun ChatComponent(
 
     errorMessage?.let { error ->
         LaunchedEffect(error) {
-            // You can add a snackbar or other error handling here
         }
     }
 }
