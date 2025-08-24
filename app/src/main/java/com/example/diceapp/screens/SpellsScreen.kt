@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +40,7 @@ fun SpellsScreen(
     val spells = spellViewModel.spells
     val slots = spellViewModel.spellSlots
     val currentCampaignId = LocalCampaignSelection.current.id
+    val context = LocalContext.current
     var isRemoveMode by remember { mutableStateOf(false) }
 
     Scaffold { padding ->
@@ -98,7 +100,7 @@ fun SpellsScreen(
                                     damageModifier = spell.damageModifier,
                                     damageType = spell.damageType
                                 )
-                                chatViewModel.addMessage(msg, MessageType.ROLL, currentCampaignId)
+                                chatViewModel.addMessage(msg, MessageType.ROLL, currentCampaignId, context)
                                 navController.navigate("chat")
                             }
                         },
@@ -107,7 +109,7 @@ fun SpellsScreen(
                             val ability = spell.saveAbility
                             if (dc != null) {
                                 val header = "**${spell.name}** — target makes a ${ability ?: "—"} save (DC $dc)."
-                                chatViewModel.addMessage(header, MessageType.ROLL, currentCampaignId)
+                                chatViewModel.addMessage(header, MessageType.ROLL, currentCampaignId, context)
                             }
                             if (spell.damageDice != null && spell.damageType != null) {
                                 val dmgMsg = diceRollViewModel.rollDamage(
@@ -116,13 +118,13 @@ fun SpellsScreen(
                                     damageModifier = spell.damageModifier,
                                     damageType = spell.damageType
                                 )
-                                chatViewModel.addMessage(dmgMsg, MessageType.ROLL, currentCampaignId)
+                                chatViewModel.addMessage(dmgMsg, MessageType.ROLL, currentCampaignId, context)
                             }
-                            chatViewModel.addMessage(buildSpellDescription(spell), MessageType.ROLL, currentCampaignId)
+                            chatViewModel.addMessage(buildSpellDescription(spell), MessageType.ROLL, currentCampaignId, context)
                             navController.navigate("chat")
                         },
                         onPostDescription = {
-                            chatViewModel.addMessage(buildSpellDescription(spell), MessageType.ROLL, currentCampaignId)
+                            chatViewModel.addMessage(buildSpellDescription(spell), MessageType.ROLL, currentCampaignId, context)
                             navController.navigate("chat")
                         },
                         showRemoveIcon = isRemoveMode,
@@ -311,7 +313,7 @@ fun SpellRow(
                     if (spell.concentration) FlagLetter("C")
                     if (spell.ritual) FlagLetter("R")
 
-                    val comps = (spell.components ?: "").uppercase()
+                    val comps = spell.components.uppercase()
                     if ('V' in comps) FlagLetter("V")
                     if ('S' in comps) FlagLetter("S")
                     if ('M' in comps) FlagLetter("M")
@@ -427,7 +429,7 @@ private fun buildSpellDescription(spell: Spell): String {
         if (spell.concentration) add("Concentration")
         if (spell.ritual) add("Ritual")
     }.joinToString(", ")
-    val components = spell.components ?: "—"
+    val components = spell.components
     val type = spell.typeLabel()
     val header = "**${spell.name}** (Lv ${spell.level}) — $type"
     val meta = "Casting Time: ${spell.castingTime} • Range: ${spell.range} • Components: $components" +

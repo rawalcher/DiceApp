@@ -3,7 +3,7 @@
   <component name="deploymentTargetSelector">
     <selectionStates>
       <SelectionState runConfigName="app">
-        <option name="selectionMode" value="DROPDOWN" />
+        <option name="selectionMode" value="DIALOG" />
         <DropdownSelection timestamp="2025-08-22T09:29:27.366725687Z">
           <Target type="DEFAULT_BOOT">
             <handle>
@@ -15,22 +15,12 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
+                <DeviceId pluginId="LocalEmulator" identifier="path=/home/rawalcher/.android/avd/Player2.avd" />
+              </handle>
+            </Target>
+            <Target type="DEFAULT_BOOT">
+              <handle>
                 <DeviceId pluginId="LocalEmulator" identifier="path=/home/rawalcher/.android/avd/Pixel_3a_API_34_extension_level_7_x86_64.avd" />
-              </handle>
-            </Target>
-            <Target type="DEFAULT_BOOT">
-              <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=/home/rawalcher/.android/avd/Copy_of_Pixel_3a_API_34_extension_level_7_x86_64.avd" />
-              </handle>
-            </Target>
-            <Target type="DEFAULT_BOOT">
-              <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=/home/rawalcher/.android/avd/Copy_of_Copy_of_Pixel_3a_API_34_extension_level_7_x86_64.avd" />
-              </handle>
-            </Target>
-            <Target type="DEFAULT_BOOT">
-              <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=/home/rawalcher/.android/avd/Copy_of_Copy_of_Copy_of_Pixel_3a_API_34_extension_level_7_x86_64.avd" />
               </handle>
             </Target>
           </targets>

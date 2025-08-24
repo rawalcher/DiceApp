@@ -279,9 +279,9 @@ class CharacterViewModel : ViewModel() {
         resetDeathSaves()
     }
 
-    fun applyDeathSaveResult(roll: Int, chatViewModel: ChatViewModel) {
+    fun applyDeathSaveResult(roll: Int, chatViewModel: ChatViewModel, context: Context) {
         val message = "/ToDM 🎲 Death Save: Rolled 1d20 = $roll"
-        chatViewModel.addMessage(message, MessageType.ROLL, currentCharacterData?.campaignId)
+        chatViewModel.addMessage(message, MessageType.ROLL, currentCharacterData?.campaignId, context)
 
         when {
             roll == 1 -> {

@@ -49,6 +49,7 @@ class ChatViewModel : ViewModel() {
     private val minRefreshInterval = 2000L
 
     fun setCampaign(campaignId: String) {
+        Log.d("ChatViewModel", "setCampaign(campaignId=$campaignId)")
         if (currentCampaignId != campaignId) {
             currentCampaignId = campaignId
             _messages.value = emptyList()
@@ -58,6 +59,7 @@ class ChatViewModel : ViewModel() {
     }
 
     fun stopAutoRefresh() {
+        Log.d("ChatViewModel", "stopAutoRefresh()")
         autoRefreshJob?.cancel()
         autoRefreshJob = null
     }
@@ -67,23 +69,23 @@ class ChatViewModel : ViewModel() {
         campaignId: String? = null,
         isAutoRefresh: Boolean = false
     ) {
+        Log.d("ChatViewModel", "loadMessages(campaignId=$campaignId, isAutoRefresh=$isAutoRefresh)")
         val id = campaignId ?: currentCampaignId ?: return
 
         val currentTime = System.currentTimeMillis()
         if (isAutoRefresh && currentTime - lastRefreshTime.get() < minRefreshInterval) {
+            Log.d("ChatViewModel", "Skipped loadMessages due to minRefreshInterval")
             return
         }
 
         viewModelScope.launch {
-            if (!isAutoRefresh) {
-                _isLoading.value = true
-            }
+            if (!isAutoRefresh) _isLoading.value = true
             _errorMessage.value = null
 
             try {
-                val token = getToken(context)
-                if (token == null) {
+                val token = getToken(context) ?: run {
                     _errorMessage.value = "Not logged in"
+                    Log.w("ChatViewModel", "No token found, cannot load messages")
                     return@launch
                 }
 
@@ -92,42 +94,40 @@ class ChatViewModel : ViewModel() {
                     .header("Authorization", "Bearer $token")
                     .build()
 
-                val response = withContext(Dispatchers.IO) {
-                    client.newCall(request).execute()
-                }
-
-                if (response.isSuccessful) {
-                    val responseBody = response.body?.string()
-                    if (responseBody != null) {
-                        val messagesResponse =
-                            json.decodeFromString<GetMessagesResponse>(responseBody)
-
-                        val currentMessages = _messages.value
-                        if (messagesResponse.messages != currentMessages) {
-                            _messages.value = messagesResponse.messages
-                            lastRefreshTime.set(currentTime)
-                            Log.d("ChatViewModel", "Loaded ${messagesResponse.messages.size} messages")
+                val result = withContext(Dispatchers.IO) {
+                    client.newCall(request).execute().use { response ->
+                        val bodyString = response.body?.string() // still on IO
+                        object {
+                            val isSuccessful = response.isSuccessful
+                            val code = response.code
+                            val message = response.message
+                            val body = bodyString
                         }
                     }
-                } else {
-                    val errorMsg = "Failed to load messages: ${response.code}"
-                    if (!isAutoRefresh) {
-                        _errorMessage.value = errorMsg
+                }
+
+                if (result.isSuccessful && result.body != null) {
+                    val messagesResponse = json.decodeFromString<GetMessagesResponse>(result.body)
+                    val currentMessages = _messages.value
+                    if (messagesResponse.messages != currentMessages) {
+                        _messages.value = messagesResponse.messages
+                        lastRefreshTime.set(currentTime)
+                        Log.d("ChatViewModel", "Loaded ${messagesResponse.messages.size} messages")
                     }
-                    Log.e("ChatViewModel", "$errorMsg - ${response.message}")
+                } else {
+                    val errorMsg = "Failed to load messages: ${result.code}"
+                    if (!isAutoRefresh) _errorMessage.value = errorMsg
+                    Log.e("ChatViewModel", "$errorMsg - ${result.message}")
                 }
             } catch (e: Exception) {
                 val errorMsg = "Error: ${e.localizedMessage}"
-                if (!isAutoRefresh) {
-                    _errorMessage.value = errorMsg
-                }
+                if (!isAutoRefresh) _errorMessage.value = errorMsg
                 Log.e("ChatViewModel", "Error loading messages", e)
             } finally {
-                if (!isAutoRefresh) {
-                    _isLoading.value = false
-                }
+                if (!isAutoRefresh) _isLoading.value = false
             }
         }
+
     }
 
     fun sendMessage(
@@ -137,13 +137,14 @@ class ChatViewModel : ViewModel() {
         isToGM: Boolean = false,
         campaignId: String? = null
     ) {
+        Log.d("ChatViewModel", "sendMessage(content=$content, type=$messageType, isToGM=$isToGM, campaignId=$campaignId)")
         val id = campaignId ?: currentCampaignId ?: return
 
         viewModelScope.launch {
             try {
-                val token = getToken(context)
-                if (token == null) {
+                val token = getToken(context) ?: run {
                     _errorMessage.value = "Not logged in"
+                    Log.w("ChatViewModel", "No token found, cannot send message")
                     return@launch
                 }
 
@@ -163,23 +164,27 @@ class ChatViewModel : ViewModel() {
                     .post(requestBody)
                     .build()
 
-                val response = withContext(Dispatchers.IO) {
-                    client.newCall(request).execute()
+                val result = withContext(Dispatchers.IO) {
+                    client.newCall(request).execute().use { response ->
+                        val bodyString = response.body?.string()
+                        object {
+                            val isSuccessful = response.isSuccessful
+                            val code = response.code
+                            val message = response.message
+                            val body = bodyString
+                        }
+                    }
                 }
 
-                if (response.isSuccessful) {
-                    val responseBody = response.body?.string()
-                    if (responseBody != null) {
-                        val newMessage = json.decodeFromString<ChatMessage>(responseBody)
-                        _messages.value = _messages.value + newMessage
-                        Log.d("ChatViewModel", "Message sent successfully")
-
-                        delay(500)
-                        loadMessages(context, id, isAutoRefresh = true)
-                    }
+                if (result.isSuccessful && result.body != null) {
+                    val newMessage = json.decodeFromString<ChatMessage>(result.body)
+                    _messages.value = _messages.value + newMessage
+                    Log.d("ChatViewModel", "Message sent successfully")
+                    delay(500)
+                    loadMessages(context, id, isAutoRefresh = true)
                 } else {
-                    _errorMessage.value = "Failed to send message: ${response.code}"
-                    Log.e("ChatViewModel", "Failed to send message: ${response.code} - ${response.message}")
+                    _errorMessage.value = "Failed to send message: ${result.code}"
+                    Log.e("ChatViewModel", "Failed to send message: ${result.code} - ${result.message}")
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "Error: ${e.localizedMessage}"
@@ -189,6 +194,7 @@ class ChatViewModel : ViewModel() {
     }
 
     fun postRollCommand(command: String, context: Context? = null) {
+        Log.d("ChatViewModel", "postRollCommand(command=$command)")
         if (!command.startsWith("/r ")) {
             if (context != null) {
                 sendMessage(context, "You: $command", MessageType.CHAT)
@@ -202,12 +208,15 @@ class ChatViewModel : ViewModel() {
     }
 
     fun postExternalRoll(description: String, context: Context? = null) {
+        Log.d("ChatViewModel", "postExternalRoll(description=$description)")
         if (context != null) {
             sendMessage(context, description, MessageType.ROLL)
         }
     }
 
     fun addMessage(message: String, messageType: MessageType, campaignId: String?, context: Context? = null) {
+        Log.d("ChatViewModel", "addMessage(message=$message, type=$messageType, campaignId=$campaignId)")
+        Log.d("ChatViewModel", "context is $context")
 
         val isToGM = message.startsWith("/ToDM")
         val cleanContent = if (isToGM) message.removePrefix("/ToDM ") else message
@@ -218,11 +227,13 @@ class ChatViewModel : ViewModel() {
     }
 
     private fun getToken(context: Context): String? {
+        Log.d("ChatViewModel", "getToken()")
         val prefs = context.getSharedPreferences("dice_app_prefs", Context.MODE_PRIVATE)
         return prefs.getString("auth_token", null)
     }
 
     override fun onCleared() {
+        Log.d("ChatViewModel", "onCleared()")
         super.onCleared()
         stopAutoRefresh()
     }

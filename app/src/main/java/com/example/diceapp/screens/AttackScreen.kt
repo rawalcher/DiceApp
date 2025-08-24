@@ -18,6 +18,7 @@ import com.example.diceapp.viewModels.*
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import com.example.diceapp.models.MessageType
 import com.example.diceapp.models.LocalCampaignSelection
 
@@ -30,6 +31,7 @@ fun AttackScreen(
 ) {
     val attacks = attackViewModel.attacks
     val currentCampaignId = LocalCampaignSelection.current.id
+    val context = LocalContext.current
     var isRemoveMode by remember { mutableStateOf(false) }
 
     Scaffold { padding ->
@@ -99,7 +101,7 @@ fun AttackScreen(
                             damageModifier = attack.damageModifier,
                             damageType = attack.damageType
                         )
-                        chatViewModel.addMessage(message, MessageType.ROLL, currentCampaignId)
+                        chatViewModel.addMessage(message, MessageType.ROLL, currentCampaignId, context)
                         navController.navigate("chat")
                     },
                     showRemoveIcon = isRemoveMode,

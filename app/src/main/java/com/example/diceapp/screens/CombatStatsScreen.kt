@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.diceapp.viewModels.CharacterViewModel
@@ -37,6 +38,7 @@ fun CombatStatsScreen(
     val cardColor = Color.Black
     val textColor = Color.White
     val currentCampaignId = LocalCampaignSelection.current.id
+    val currentContext = LocalContext.current
     val successes by characterViewModel.deathSaveSuccesses
     val failures by characterViewModel.deathSaveFailures
 
@@ -109,7 +111,7 @@ fun CombatStatsScreen(
                             modifier = characterViewModel.initiative,
                             type = "Roll"
                         )
-                        chatViewModel.addMessage(message, MessageType.ROLL, currentCampaignId)
+                        chatViewModel.addMessage(message, MessageType.ROLL, currentCampaignId, currentContext)
                         onNavigateToChat()
                     }
                 )
@@ -182,7 +184,7 @@ fun CombatStatsScreen(
                                         hitDieType = characterViewModel.hitDieType,
                                         conModifier = conMod
                                     )
-                                    chatViewModel.addMessage(message, MessageType.ROLL, currentCampaignId)
+                                    chatViewModel.addMessage(message, MessageType.ROLL, currentCampaignId, currentContext)
                                     onNavigateToChat()
                                 }
                         ) {
@@ -221,7 +223,7 @@ fun CombatStatsScreen(
                         failures = failures,
                         onClick = {
                             val roll = diceRollViewModel.rollDeathSave()
-                            characterViewModel.applyDeathSaveResult(roll, chatViewModel)
+                            characterViewModel.applyDeathSaveResult(roll, chatViewModel, currentContext)
                             onNavigateToChat()
                         },
                         onReset = {

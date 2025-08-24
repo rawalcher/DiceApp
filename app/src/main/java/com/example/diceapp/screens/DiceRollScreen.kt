@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.diceapp.viewModels.ChatViewModel
@@ -26,6 +27,7 @@ fun DiceRollScreen(
     diceRollViewModel: DiceRollViewModel,
     modifierViewModel: ModifierViewModel
 ) {
+    val currentContext = LocalContext.current
     val (extraFlat, extraDice) = modifierViewModel.aggregateFor(type)
     Scaffold(
         topBar = {
@@ -93,7 +95,7 @@ fun DiceRollScreen(
                         extraFlatModifier = extraFlat,
                         extraDice = extraDice
                     )
-                    chatViewModel.postExternalRoll(message)
+                    chatViewModel.postExternalRoll(message, currentContext)
                     navController.navigate("chat") {
                         popUpTo("menu") { inclusive = false }
                     }
