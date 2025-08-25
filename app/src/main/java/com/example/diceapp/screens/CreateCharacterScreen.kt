@@ -16,15 +16,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel // wenn du Hilt nutzt, ersetze durch hiltViewModel()
 import com.example.diceapp.viewModels.Character
 import com.example.diceapp.viewModels.CreateCharacterViewModel
+import com.example.diceapp.viewModels.CharacterViewModel
 
 @Composable
 fun CreateCharacterScreen(
     navController: NavController,
-    viewModel: CreateCharacterViewModel
+    createVM: CreateCharacterViewModel
 ) {
     val context = LocalContext.current
+
+    // CharacterViewModel als Quelle für die Werte (Abilities, AC, HP, usw.)
+    val characterVM: CharacterViewModel = viewModel() // bei Hilt: val characterVM: CharacterViewModel = hiltViewModel()
 
     var name by rememberSaveable { mutableStateOf("") }
     var charClass by rememberSaveable { mutableStateOf("") }
@@ -47,12 +52,12 @@ fun CreateCharacterScreen(
     var showCampaignPicker by rememberSaveable { mutableStateOf(false) }
 
     // Abgeleitetes Character-Objekt (immer aktuell aus dem ViewModel)
-    val fullscreenCharacter = remember(viewModel.characters, fullscreenCharacterId) {
-        viewModel.characters.firstOrNull { it.id == fullscreenCharacterId }
+    val fullscreenCharacter = remember(createVM.characters, fullscreenCharacterId) {
+        createVM.characters.firstOrNull { it.id == fullscreenCharacterId }
     }
 
     // Characters automatisch laden
-    LaunchedEffect(Unit) { viewModel.loadCharacters(context) }
+    LaunchedEffect(Unit) { createVM.loadCharacters(context) }
 
     Scaffold { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -129,8 +134,9 @@ fun CreateCharacterScreen(
                             if (name.isBlank() || charClass.isBlank() || level.isBlank() || race.isBlank()) {
                                 errorMessageLocal = "Please fill all required fields"
                             } else {
-                                viewModel.createCharacter(
+                                createVM.createCharacter(
                                     context = context,
+                                    source = characterVM, // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                     name = name,
                                     charClass = charClass,
                                     level = level.toInt(),
@@ -166,7 +172,7 @@ fun CreateCharacterScreen(
                             Spacer(Modifier.height(8.dp))
                             Text(it, color = MaterialTheme.colorScheme.error)
                         }
-                        viewModel.errorMessage?.let {
+                        createVM.errorMessage?.let {
                             Spacer(Modifier.height(8.dp))
                             Text(it, color = MaterialTheme.colorScheme.error)
                         }
@@ -179,14 +185,14 @@ fun CreateCharacterScreen(
                 }
 
                 // Liste / Loading
-                if (viewModel.isLoading) {
+                if (createVM.isLoading) {
                     item { CircularProgressIndicator() }
                 } else {
-                    items(viewModel.characters) { character ->
+                    items(createVM.characters) { character ->
                         CharacterCardSmall(
                             character = character,
                             onClick = { fullscreenCharacterId = character.id },
-                            onDelete = { id -> viewModel.deleteCharacter(context, id) }
+                            onDelete = { id -> createVM.deleteCharacter(context, id) }
                         )
                     }
                     item { Spacer(Modifier.height(32.dp)) }
@@ -349,7 +355,7 @@ fun CreateCharacterScreen(
                                         Button(
                                             onClick = {
                                                 showCampaignPicker = true
-                                                viewModel.loadCampaigns(context)
+                                                createVM.loadCampaigns(context)
                                             },
                                             colors = actionColors,
                                             modifier = Modifier.fillMaxWidth()
@@ -357,7 +363,7 @@ fun CreateCharacterScreen(
                                     } else {
                                         Button(
                                             onClick = {
-                                                viewModel.unassignCharacter(
+                                                createVM.unassignCharacter(
                                                     context = context,
                                                     characterId = character.id
                                                 )
@@ -371,7 +377,7 @@ fun CreateCharacterScreen(
                                         Button(
                                             onClick = {
                                                 showCampaignPicker = true
-                                                viewModel.loadCampaigns(context)
+                                                createVM.loadCampaigns(context)
                                             },
                                             colors = actionColors,
                                             modifier = Modifier.fillMaxWidth()
@@ -408,9 +414,10 @@ fun CreateCharacterScreen(
                                         onClick = {
                                             val levelInt = eLevel.toIntOrNull()
                                             if (eName.isBlank() || eClass.isBlank() || levelInt == null) return@Button
-                                            viewModel.updateCharacter(
+                                            createVM.updateCharacter(
                                                 context = context,
                                                 characterId = character.id,
+                                                source = characterVM, // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                                 name = eName,
                                                 charClass = eClass,
                                                 level = levelInt,
@@ -454,7 +461,7 @@ fun CreateCharacterScreen(
                         text = { Text("Are you sure you want to delete ${character.name}?") },
                         confirmButton = {
                             TextButton(onClick = {
-                                viewModel.deleteCharacter(context, character.id)
+                                createVM.deleteCharacter(context, character.id)
                                 showDeleteDialog = false
                                 fullscreenCharacterId = null
                             }) { Text("Yes") }
@@ -468,18 +475,18 @@ fun CreateCharacterScreen(
                 // Kampagnen-Picker
                 if (showCampaignPicker) {
                     CampaignPickerDialog(
-                        isLoading = viewModel.isLoading || viewModel.isAssigning,
-                        campaigns = viewModel.campaigns,
+                        isLoading = createVM.isLoading || createVM.isAssigning,
+                        campaigns = createVM.campaigns,
                         onClose = { showCampaignPicker = false },
                         onSelect = { selected ->
                             val id = fullscreenCharacterId ?: return@CampaignPickerDialog
-                            viewModel.assignCharacterToCampaign(
+                            createVM.assignCharacterToCampaign(
                                 context = context,
                                 characterId = id,
                                 campaignId = selected.id
                             ) {
                                 showCampaignPicker = false
-                                // UI aktualisiert sich über viewModel.characters
+                                // UI aktualisiert sich über createVM.characters
                             }
                         }
                     )

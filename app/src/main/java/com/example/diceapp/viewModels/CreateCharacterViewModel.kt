@@ -17,17 +17,16 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
-
-
-
 private const val PREFS_NAME = "dice_app_prefs"
 private const val KEY_AUTH_TOKEN = "auth_token"
-private const val TAG = "CampaignViewModel"
+private const val TAG = "CreateCharacterVM"
 
 class CreateCharacterViewModel : ViewModel() {
     private val baseUrl = "http://10.0.2.2:8080"
     private val client = OkHttpClient()
-    private val json = Json { ignoreUnknownKeys = true
+    private val json = Json {
+        ignoreUnknownKeys = true
+
     }
 
     var campaigns by mutableStateOf<List<Campaign>>(emptyList())
@@ -45,37 +44,35 @@ class CreateCharacterViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
+    // -------- Helpers --------
+    private fun getToken(context: Context): String? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_AUTH_TOKEN, null)
+    }
+
+    private fun abilityValue(vm: CharacterViewModel, name: String): Int =
+        vm.abilities.firstOrNull { it.name == name }?.value ?: 10
+
+    // -------- API Calls --------
 
     fun loadCharacters(context: Context) {
         viewModelScope.launch {
             isLoading = true
             errorMessage = null
-
             try {
-                val token = getToken(context)
-                if (token == null) {
-                    errorMessage = "Not logged in"
-                    return@launch
-                }
-
+                val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
                 val request = Request.Builder()
                     .url("$baseUrl/characters")
                     .header("Authorization", "Bearer $token")
                     .build()
-
-                val response = withContext(Dispatchers.IO) {
-                    client.newCall(request).execute()
-                }
-
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 if (response.isSuccessful) {
-                    val responseBody = response.body?.string()
-                    if (responseBody != null) {
-                        characters = json.decodeFromString<List<Character>>(responseBody)
+                    response.body?.string()?.let { body ->
+                        characters = json.decodeFromString(body)
                         Log.d(TAG, "Loaded ${characters.size} characters")
                     }
                 } else {
                     errorMessage = "Failed to load characters: ${response.code}"
-                    Log.e(TAG, "Failed to load characters: ${response.code} - ${response.message}")
                 }
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.localizedMessage}"
@@ -86,8 +83,120 @@ class CreateCharacterViewModel : ViewModel() {
         }
     }
 
+    fun loadCampaigns(context: Context) {
+        viewModelScope.launch {
+            errorMessage = null
+            try {
+                val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
+                val request = Request.Builder()
+                    .url("$baseUrl/campaigns")
+                    .header("Authorization", "Bearer $token")
+                    .build()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                if (response.isSuccessful) {
+                    response.body?.string()?.let { body ->
+                        campaigns = json.decodeFromString(body)
+                    }
+                } else {
+                    errorMessage = "Failed to load campaigns: ${response.code}"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun assignCharacterToCampaign(
+        context: Context,
+        characterId: Int,
+        campaignId: String,
+        onSuccess: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            isAssigning = true
+            errorMessage = null
+            try {
+                val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
+                val request = Request.Builder()
+                    .url("$baseUrl/characters/$characterId/assign/$campaignId")
+                    .header("Authorization", "Bearer $token")
+                    .put("".toRequestBody("application/json; charset=utf-8".toMediaType()))
+                    .build()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                if (response.isSuccessful) {
+                    loadCharacters(context)
+                    onSuccess()
+                } else {
+                    errorMessage = "Failed to assign: ${response.code}"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error: ${e.localizedMessage}"
+            } finally {
+                isAssigning = false
+            }
+        }
+    }
+
+    fun unassignCharacter(
+        context: Context,
+        characterId: Int,
+        onSuccess: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+            try {
+                val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
+                val request = Request.Builder()
+                    .url("$baseUrl/characters/$characterId/unassign")
+                    .header("Authorization", "Bearer $token")
+                    .put("".toRequestBody("application/json; charset=utf-8".toMediaType()))
+                    .build()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                if (response.isSuccessful) {
+                    loadCharacters(context)
+                    onSuccess()
+                } else {
+                    errorMessage = "Failed to unassign: ${response.code}"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error: ${e.localizedMessage}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun deleteCharacter(context: Context, characterId: Int, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+            try {
+                val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
+                val request = Request.Builder()
+                    .url("$baseUrl/characters/$characterId")
+                    .header("Authorization", "Bearer $token")
+                    .delete()
+                    .build()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                if (response.isSuccessful) {
+                    loadCharacters(context)
+                    onSuccess()
+                } else {
+                    errorMessage = "Failed to delete character: ${response.code}"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error: ${e.localizedMessage}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+
     fun createCharacter(
         context: Context,
+        source: CharacterViewModel,
         name: String,
         charClass: String,
         level: Int,
@@ -101,13 +210,8 @@ class CreateCharacterViewModel : ViewModel() {
         viewModelScope.launch {
             isLoading = true
             errorMessage = null
-
             try {
-                val token = getToken(context)
-                if (token == null) {
-                    errorMessage = "Not logged in"
-                    return@launch
-                }
+                val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
 
                 val createRequest = CreateCharacterRequest(
                     name = name,
@@ -117,10 +221,26 @@ class CreateCharacterViewModel : ViewModel() {
                     raceDescription = raceDescription,
                     classDescription = classDescription,
                     appearanceDescription = appearanceDescription,
-                    backstory = backstory
+                    backstory = backstory,
+
+                    strength = abilityValue(source, "Strength"),
+                    dexterity = abilityValue(source, "Dexterity"),
+                    constitution = abilityValue(source, "Constitution"),
+                    intelligence = abilityValue(source, "Intelligence"),
+                    wisdom = abilityValue(source, "Wisdom"),
+                    charisma = abilityValue(source, "Charisma"),
+
+                    armorClass = source.armorClass,
+                    maxHp = source.maxHP,
+                    currentHp = source.currentHP,
+                    speed = source.speed,
+                    proficiencyBonus = source.proficiencyBonus,
+                    hitDiceTotal = source.hitDiceTotal,
+                    hitDiceRemaining = source.remainingHitDice,
+                    hitDieType = source.hitDieType
                 )
 
-                val requestBody = json.encodeToString(createRequest)
+                val requestBody = json.encodeToString(CreateCharacterRequest.serializer(), createRequest)
                     .toRequestBody("application/json; charset=utf-8".toMediaType())
 
                 val request = Request.Builder()
@@ -129,10 +249,7 @@ class CreateCharacterViewModel : ViewModel() {
                     .post(requestBody)
                     .build()
 
-                val response = withContext(Dispatchers.IO) {
-                    client.newCall(request).execute()
-                }
-
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 if (response.isSuccessful) {
                     Log.d(TAG, "Character created successfully")
                     loadCharacters(context)
@@ -151,149 +268,10 @@ class CreateCharacterViewModel : ViewModel() {
     }
 
 
-    fun deleteCharacter(context: Context, characterId: Int, onSuccess: () -> Unit = {}) {
-        viewModelScope.launch {
-            isLoading = true
-            errorMessage = null
-
-            try {
-                val token = getToken(context)
-                if (token == null) {
-                    errorMessage = "Not logged in"
-                    return@launch
-                }
-
-                val request = Request.Builder()
-                    .url("$baseUrl/characters/$characterId")
-                    .header("Authorization", "Bearer $token")
-                    .delete()
-                    .build()
-
-                val response = withContext(Dispatchers.IO) {
-                    client.newCall(request).execute()
-                }
-
-                if (response.isSuccessful) {
-                    Log.d(TAG, "Character deleted successfully")
-                    loadCharacters(context) // Liste aktualisieren
-                    onSuccess()
-                } else {
-                    errorMessage = "Failed to delete character: ${response.code}"
-                    Log.e(TAG, "Failed to delete character: ${response.code} - ${response.message}")
-                }
-            } catch (e: Exception) {
-                errorMessage = "Error: ${e.localizedMessage}"
-                Log.e(TAG, "Error deleting character", e)
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-
-
-    private fun getToken(context: Context): String? {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_AUTH_TOKEN, null)
-    }
-    fun loadCampaigns(context: Context) {
-        viewModelScope.launch {
-            errorMessage = null
-            try {
-                val token = getToken(context) ?: run {
-                    errorMessage = "Not logged in"; return@launch
-                }
-
-                val request = Request.Builder()
-                    .url("$baseUrl/campaigns")
-                    .header("Authorization", "Bearer $token")
-                    .build()
-
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    response.body?.string()?.let { body ->
-                        campaigns = json.decodeFromString(body)
-                    }
-                } else {
-                    errorMessage = "Failed to load campaigns: ${response.code}"
-                }
-            } catch (e: Exception) {
-                errorMessage = "Error: ${e.localizedMessage}"
-            }
-        }
-    }
-    fun assignCharacterToCampaign(
-        context: Context,
-        characterId: Int,
-        campaignId: String,
-        onSuccess: () -> Unit = {}
-    ) {
-        viewModelScope.launch {
-            isAssigning = true
-            errorMessage = null
-            try {
-                val token = getToken(context) ?: run {
-                    errorMessage = "Not logged in"; return@launch
-                }
-
-                val request = Request.Builder()
-                    .url("$baseUrl/characters/$characterId/assign/$campaignId")
-                    .header("Authorization", "Bearer $token")
-                    .put("".toRequestBody("application/json; charset=utf-8".toMediaType()))
-                    .build()
-
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    // Liste neu laden, damit campaignName aktualisiert ist
-                    loadCharacters(context)
-                    onSuccess()
-                } else {
-                    errorMessage = "Failed to assign: ${response.code}"
-                }
-            } catch (e: Exception) {
-                errorMessage = "Error: ${e.localizedMessage}"
-            } finally {
-                isAssigning = false
-            }
-        }
-    }
-    fun unassignCharacter(
-        context: Context,
-        characterId: Int,
-        onSuccess: () -> Unit = {}
-    ) {
-        viewModelScope.launch {
-            isLoading = true
-            errorMessage = null
-            try {
-                val token = getToken(context) ?: run {
-                    errorMessage = "Not logged in"; return@launch
-                }
-
-                val request = Request.Builder()
-                    .url("$baseUrl/characters/$characterId/unassign")
-                    .header("Authorization", "Bearer $token")
-                    .put("".toRequestBody("application/json; charset=utf-8".toMediaType()))
-                    .build()
-
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    loadCharacters(context)
-                    onSuccess()
-                } else {
-                    errorMessage = "Failed to unassign: ${response.code}"
-                }
-            } catch (e: Exception) {
-                errorMessage = "Error: ${e.localizedMessage}"
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
     fun updateCharacter(
         context: Context,
         characterId: Int,
+        source: CharacterViewModel, // <- Werte aus deinem laufenden VM
         name: String,
         charClass: String,
         level: Int,
@@ -308,9 +286,7 @@ class CreateCharacterViewModel : ViewModel() {
             isLoading = true
             errorMessage = null
             try {
-                val token = getToken(context) ?: run {
-                    errorMessage = "Not logged in"; return@launch
-                }
+                val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
 
                 val body = UpdateCharacterRequest(
                     name = name,
@@ -320,9 +296,26 @@ class CreateCharacterViewModel : ViewModel() {
                     raceDescription = raceDescription,
                     classDescription = classDescription,
                     appearanceDescription = appearanceDescription,
-                    backstory = backstory
+                    backstory = backstory,
+
+                    strength = abilityValue(source, "Strength"),
+                    dexterity = abilityValue(source, "Dexterity"),
+                    constitution = abilityValue(source, "Constitution"),
+                    intelligence = abilityValue(source, "Intelligence"),
+                    wisdom = abilityValue(source, "Wisdom"),
+                    charisma = abilityValue(source, "Charisma"),
+
+                    armorClass = source.armorClass,
+                    maxHp = source.maxHP,
+                    currentHp = source.currentHP,
+                    speed = source.speed,
+                    proficiencyBonus = source.proficiencyBonus,
+                    hitDiceTotal = source.hitDiceTotal,
+                    hitDiceRemaining = source.remainingHitDice,
+                    hitDieType = source.hitDieType
                 )
-                val requestBody = json.encodeToString(body)
+
+                val requestBody = json.encodeToString(UpdateCharacterRequest.serializer(), body)
                     .toRequestBody("application/json; charset=utf-8".toMediaType())
 
                 val req = Request.Builder()
@@ -338,7 +331,6 @@ class CreateCharacterViewModel : ViewModel() {
                 }
 
                 val updated: Character = json.decodeFromString(resp.body?.string().orEmpty())
-                // Liste neu laden, damit alles konsistent bleibt
                 loadCharacters(context)
                 onSuccess(updated)
             } catch (e: Exception) {
@@ -349,13 +341,10 @@ class CreateCharacterViewModel : ViewModel() {
             }
         }
     }
-
-
-
-
 }
 
-// Data classes
+// --------------------- DTOs (Client) ---------------------
+
 @Serializable
 data class Character(
     val id: Int = 0,
@@ -369,17 +358,7 @@ data class Character(
     val raceDescription: String? = null,
     val campaignId: String? = null,
     val campaignName: String? = null
-)
-@Serializable
-data class CreateCharacterRequest(
-    val name: String,
-    val charClass: String,
-    val level: Int,
-    val raceName: String? = null,
-    val classDescription: String? = null,
-    val appearanceDescription: String? = null,
-    val backstory: String? = null,
-    val raceDescription: String? = null
+
 )
 
 @Serializable
@@ -391,7 +370,37 @@ data class Campaign(
     val ownerName: String,
     val playerCount: Int,
     val maxPlayers: Int,
-    val isJoined: Boolean)
+    val isJoined: Boolean
+)
+
+
+@Serializable
+data class CreateCharacterRequest(
+    val name: String,
+    val charClass: String,
+    val level: Int,
+    val raceName: String? = null,
+    val raceDescription: String? = null,
+    val classDescription: String? = null,
+    val appearanceDescription: String? = null,
+    val backstory: String? = null,
+
+    val strength: Int,
+    val dexterity: Int,
+    val constitution: Int,
+    val intelligence: Int,
+    val wisdom: Int,
+    val charisma: Int,
+    val armorClass: Int,
+    val maxHp: Int,
+    val currentHp: Int,
+    val speed: Int,
+    val proficiencyBonus: Int,
+    val hitDiceTotal: Int,
+    val hitDiceRemaining: Int,
+    val hitDieType: Int
+)
+
 
 @Serializable
 data class UpdateCharacterRequest(
@@ -402,5 +411,20 @@ data class UpdateCharacterRequest(
     val raceDescription: String? = null,
     val classDescription: String? = null,
     val appearanceDescription: String? = null,
-    val backstory: String? = null
+    val backstory: String? = null,
+
+    val strength: Int,
+    val dexterity: Int,
+    val constitution: Int,
+    val intelligence: Int,
+    val wisdom: Int,
+    val charisma: Int,
+    val armorClass: Int,
+    val maxHp: Int,
+    val currentHp: Int,
+    val speed: Int,
+    val proficiencyBonus: Int,
+    val hitDiceTotal: Int,
+    val hitDiceRemaining: Int,
+    val hitDieType: Int
 )

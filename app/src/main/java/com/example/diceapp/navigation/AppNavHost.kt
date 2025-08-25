@@ -119,7 +119,7 @@ fun AppNavHost(
                     composable("create_character") {
                         CreateCharacterScreen(
                             navController = navController,
-                            viewModel = createCharacterViewModel
+                            createVM = createCharacterViewModel
                         )
                     }
 
