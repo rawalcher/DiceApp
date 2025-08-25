@@ -46,10 +46,7 @@ class LvlUpButtonViewModel : ViewModel() {
     @Serializable
     data class LevelUpResponse(val updated: Int)
 
-    /**
-     * NEU: Wrapper mit der Signatur, die dein Screen aufruft.
-     * So kannst du den Screen unverändert lassen.
-     */
+
     fun levelUpCampaign(
         context: Context,
         campaignId: String,

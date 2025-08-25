@@ -89,7 +89,7 @@ fun LvlUpButtonScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Kampagne wählen
+            // Select campaign
             ExposedDropdownMenuBox(
                 expanded = menuExpanded,
                 onExpandedChange = { menuExpanded = it }
@@ -124,7 +124,7 @@ fun LvlUpButtonScreen(
                 Text(error, color = MaterialTheme.colorScheme.error)
             }
 
-            // Header + Button
+            // Header + button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -165,7 +165,7 @@ fun LvlUpButtonScreen(
                 }
             }
 
-            // Liste der Charaktere
+            // List of characters
             ElevatedCard(Modifier.fillMaxSize()) {
                 if (isLoading) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

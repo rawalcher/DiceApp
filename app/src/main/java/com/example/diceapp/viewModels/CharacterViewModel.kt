@@ -242,7 +242,7 @@ class CharacterViewModel : ViewModel() {
     }
 
     private fun defaultAbilities() = listOf(
-        Ability("Strength", 10), //mit 20 getestet
+        Ability("Strength", 55), //mit 20 getestet
         Ability("Dexterity", 10),
         Ability("Constitution", 10),
         Ability("Intelligence", 10),

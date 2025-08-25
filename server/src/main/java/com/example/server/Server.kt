@@ -94,21 +94,20 @@ data class Character(
     val userId: String? = null,
     val campaignId: String? = null,
     val campaignName: String? = null,
-    // Stats & Kampfwerte
-    val strength: Int = 10,
-    val dexterity: Int = 10,
-    val constitution: Int = 10,
-    val intelligence: Int = 10,
-    val wisdom: Int = 10,
-    val charisma: Int = 10,
-    val armorClass: Int = 10,
-    val maxHp: Int = 10,
-    val currentHp: Int = 10,
-    val speed: Int = 30,
-    val proficiencyBonus: Int = 2,
-    val hitDiceTotal: Int = 1,
-    val hitDiceRemaining: Int = 1,
-    val hitDieType: Int = 6
+    val strength: Int,
+    val dexterity: Int,
+    val constitution: Int,
+    val intelligence: Int,
+    val wisdom: Int,
+    val charisma: Int,
+    val armorClass: Int,
+    val maxHp: Int,
+    val currentHp: Int,
+    val speed: Int,
+    val proficiencyBonus: Int,
+    val hitDiceTotal: Int,
+    val hitDiceRemaining: Int,
+    val hitDieType: Int
 )
 
 @Serializable
@@ -121,20 +120,20 @@ data class CreateCharacterRequest(
     val classDescription: String? = null,
     val appearanceDescription: String? = null,
     val backstory: String? = null,
-    val strength: Int = 10,
-    val dexterity: Int = 10,
-    val constitution: Int = 10,
-    val intelligence: Int = 10,
-    val wisdom: Int = 10,
-    val charisma: Int = 10,
-    val armorClass: Int = 10,
-    val maxHp: Int = 10,
-    val currentHp: Int = 10,
-    val speed: Int = 30,
-    val proficiencyBonus: Int = 2,
-    val hitDiceTotal: Int = 1,
-    val hitDiceRemaining: Int = 1,
-    val hitDieType: Int = 6
+    val strength: Int,
+    val dexterity: Int,
+    val constitution: Int,
+    val intelligence: Int,
+    val wisdom: Int,
+    val charisma: Int,
+    val armorClass: Int,
+    val maxHp: Int,
+    val currentHp: Int,
+    val speed: Int,
+    val proficiencyBonus: Int,
+    val hitDiceTotal: Int,
+    val hitDiceRemaining: Int,
+    val hitDieType: Int
 )
 
 @Serializable
@@ -147,20 +146,20 @@ data class UpdateCharacterRequest(
     val classDescription: String? = null,
     val appearanceDescription: String? = null,
     val backstory: String? = null,
-    val strength: Int = 10,
-    val dexterity: Int = 10,
-    val constitution: Int = 10,
-    val intelligence: Int = 10,
-    val wisdom: Int = 10,
-    val charisma: Int = 10,
-    val armorClass: Int = 10,
-    val maxHp: Int = 10,
-    val currentHp: Int = 10,
-    val speed: Int = 30,
-    val proficiencyBonus: Int = 2,
-    val hitDiceTotal: Int = 1,
-    val hitDiceRemaining: Int = 1,
-    val hitDieType: Int = 6
+    val strength: Int,
+    val dexterity: Int,
+    val constitution: Int,
+    val intelligence: Int,
+    val wisdom: Int,
+    val charisma: Int,
+    val armorClass: Int,
+    val maxHp: Int,
+    val currentHp: Int,
+    val speed: Int,
+    val proficiencyBonus: Int,
+    val hitDiceTotal: Int,
+    val hitDiceRemaining: Int,
+    val hitDieType: Int
 )
 
 @Serializable
@@ -901,7 +900,7 @@ fun main() {
                     val characterId = call.parameters["characterId"]?.toIntOrNull()
                         ?: return@put call.respondText("Character ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
 
-                    // Berechtigung
+
                     db.prepareStatement("SELECT user_id FROM characters WHERE id = ?").use { ps ->
                         ps.setInt(1, characterId)
                         ps.executeQuery().use { rs ->
@@ -963,7 +962,7 @@ fun main() {
                     val characterId = call.parameters["characterId"]?.toIntOrNull()
                         ?: return@delete call.respondText("Character ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
 
-                    // 1) Existenz & Ownership prüfen (ohne Kampagnen-Blockade)
+
                     db.prepareStatement("SELECT user_id FROM characters WHERE id = ?").use { ps ->
                         ps.setInt(1, characterId)
                         ps.executeQuery().use { rs ->
@@ -976,14 +975,14 @@ fun main() {
                         }
                     }
 
-                    // 2) HIER kommt dein Unassign rein (macht den Char 'frei', falls zugewiesen)
+
                     db.prepareStatement("UPDATE characters SET campaign_id = NULL WHERE id = ? AND user_id = ?").use { ps ->
                         ps.setInt(1, characterId)
                         ps.setString(2, userId)
                         ps.executeUpdate()
                     }
 
-                    // 3) Jetzt löschen
+
                     db.prepareStatement("DELETE FROM characters WHERE id = ? AND user_id = ?").use { ps ->
                         ps.setInt(1, characterId)
                         ps.setString(2, userId)
@@ -1079,7 +1078,7 @@ fun main() {
                     }
                     val characterId = characterIdStr.toInt()
 
-                    // owns character?
+
                     val owns = db.prepareStatement("SELECT 1 FROM characters WHERE id = ? AND user_id = ?").use { ps ->
                         ps.setInt(1, characterId)
                         ps.setString(2, userId)
@@ -1108,7 +1107,7 @@ fun main() {
                     val characterId = call.parameters["characterId"]?.toIntOrNull()
                         ?: return@put call.respondText("Character ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
 
-                    // ownership
+
                     val owns = db.prepareStatement("SELECT user_id FROM characters WHERE id = ?").use { ps ->
                         ps.setInt(1, characterId)
                         ps.executeQuery().use { rs -> if (rs.next()) rs.getString("user_id") == userId else false }

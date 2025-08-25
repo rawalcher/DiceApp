@@ -44,7 +44,7 @@ class CreateCharacterViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-    // -------- Helpers --------
+
     private fun getToken(context: Context): String? {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getString(KEY_AUTH_TOKEN, null)
@@ -53,7 +53,7 @@ class CreateCharacterViewModel : ViewModel() {
     private fun abilityValue(vm: CharacterViewModel, name: String): Int =
         vm.abilities.firstOrNull { it.name == name }?.value ?: 10
 
-    // -------- API Calls --------
+
 
     fun loadCharacters(context: Context) {
         viewModelScope.launch {
@@ -271,7 +271,7 @@ class CreateCharacterViewModel : ViewModel() {
     fun updateCharacter(
         context: Context,
         characterId: Int,
-        source: CharacterViewModel, // <- Werte aus deinem laufenden VM
+        source: CharacterViewModel,
         name: String,
         charClass: String,
         level: Int,
@@ -343,7 +343,7 @@ class CreateCharacterViewModel : ViewModel() {
     }
 }
 
-// --------------------- DTOs (Client) ---------------------
+
 
 @Serializable
 data class Character(
@@ -400,7 +400,6 @@ data class CreateCharacterRequest(
     val hitDiceRemaining: Int,
     val hitDieType: Int
 )
-
 
 @Serializable
 data class UpdateCharacterRequest(

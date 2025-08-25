@@ -27,42 +27,29 @@ fun CreateCharacterScreen(
     createVM: CreateCharacterViewModel
 ) {
     val context = LocalContext.current
-
-    // CharacterViewModel als Quelle für die Werte (Abilities, AC, HP, usw.)
-    val characterVM: CharacterViewModel = viewModel() // bei Hilt: val characterVM: CharacterViewModel = hiltViewModel()
-
+    val characterVM: CharacterViewModel = viewModel()
     var name by rememberSaveable { mutableStateOf("") }
     var charClass by rememberSaveable { mutableStateOf("") }
     var level by rememberSaveable { mutableStateOf("") }
     var race by rememberSaveable { mutableStateOf("") }
     var raceDescription by rememberSaveable { mutableStateOf("") }
-
-    // optionale Beschreibungsfelder
     var classDescription by rememberSaveable { mutableStateOf("") }
     var appearanceDescription by rememberSaveable { mutableStateOf("") }
     var backstory by rememberSaveable { mutableStateOf("") }
-
     var errorMessageLocal by rememberSaveable { mutableStateOf<String?>(null) }
-
-    // Fullscreen Character Overlay
     var fullscreenCharacterId by rememberSaveable { mutableStateOf<Int?>(null) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
-
-    // Kampagnen-Picker
     var showCampaignPicker by rememberSaveable { mutableStateOf(false) }
-
-    // Abgeleitetes Character-Objekt (immer aktuell aus dem ViewModel)
     val fullscreenCharacter = remember(createVM.characters, fullscreenCharacterId) {
         createVM.characters.firstOrNull { it.id == fullscreenCharacterId }
     }
 
-    // Characters automatisch laden
     LaunchedEffect(Unit) { createVM.loadCharacters(context) }
 
     Scaffold { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
 
-            // ======= GANZER SCREEN SCROLLT =======
+
             LazyColumn(
                 modifier = Modifier
                     .padding(padding)
@@ -74,7 +61,6 @@ fun CreateCharacterScreen(
                     Text("Create Character", style = MaterialTheme.typography.headlineMedium)
                 }
 
-                // --- Pflicht- & optionale Felder gebündelt ---
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
@@ -127,7 +113,6 @@ fun CreateCharacterScreen(
                     }
                 }
 
-                // --- Buttons ---
                 item {
                     Button(
                         onClick = {
@@ -146,7 +131,6 @@ fun CreateCharacterScreen(
                                     appearanceDescription = appearanceDescription.ifBlank { null },
                                     backstory = backstory.ifBlank { null }
                                 ) {
-                                    // Felder resetten
                                     name = ""; charClass = ""; level = ""; race = ""
                                     raceDescription = ""; classDescription = ""
                                     appearanceDescription = ""; backstory = ""
@@ -165,7 +149,6 @@ fun CreateCharacterScreen(
                     ) { Text("Back") }
                 }
 
-                // Fehlermeldungen / Status
                 item {
                     Column {
                         errorMessageLocal?.let {
@@ -179,12 +162,12 @@ fun CreateCharacterScreen(
                     }
                 }
 
-                // Überschrift Liste
+
                 item {
                     Text("Existing Characters", style = MaterialTheme.typography.headlineSmall)
                 }
 
-                // Liste / Loading
+
                 if (createVM.isLoading) {
                     item { CircularProgressIndicator() }
                 } else {
@@ -199,14 +182,14 @@ fun CreateCharacterScreen(
                 }
             }
 
-            // ======= FULLSCREEN OVERLAY mit Bearbeiten =======
+
             fullscreenCharacter?.let { character ->
                 var isEditing by rememberSaveable(fullscreenCharacterId) { mutableStateOf(false) }
 
-                // Scroll-State für Edit-Ansicht (saveable)
+
                 val scrollState = rememberSaveable(fullscreenCharacterId, saver = ScrollState.Saver) { ScrollState(0) }
 
-                // Edit-Felder (saveable & an ID gebunden)
+
                 var eName by rememberSaveable(fullscreenCharacterId) { mutableStateOf(character.name) }
                 var eClass by rememberSaveable(fullscreenCharacterId) { mutableStateOf(character.charClass) }
                 var eLevel by rememberSaveable(fullscreenCharacterId) { mutableStateOf(character.level.toString()) }
@@ -227,7 +210,6 @@ fun CreateCharacterScreen(
                     eBackstory = c.backstory ?: ""
                 }
 
-                // Konsistente Button-Styles
                 val actionColors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -349,7 +331,7 @@ fun CreateCharacterScreen(
 
                                     HorizontalDivider()
 
-                                    // Kampagnen-Aktionen – optisch passend (gleiche Button-Art)
+
                                     val isAssigned = (character.campaignId != null) || (character.campaignName != null)
                                     if (!isAssigned) {
                                         Button(
@@ -384,7 +366,7 @@ fun CreateCharacterScreen(
                                         ) { Text("Choose Another Campaign") }
                                     }
 
-                                    // Edit über Delete – gleiches Layout, andere Farbe
+
                                     Spacer(Modifier.height(8.dp))
                                     Button(
                                         onClick = {
@@ -404,7 +386,7 @@ fun CreateCharacterScreen(
                                 }
                             }
 
-                            // Bottom-Aktionsleiste
+
                             if (isEditing) {
                                 Column(
                                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -417,7 +399,7 @@ fun CreateCharacterScreen(
                                             createVM.updateCharacter(
                                                 context = context,
                                                 characterId = character.id,
-                                                source = characterVM, // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                source = characterVM,
                                                 name = eName,
                                                 charClass = eClass,
                                                 level = levelInt,
@@ -427,7 +409,7 @@ fun CreateCharacterScreen(
                                                 appearanceDescription = eAppear.ifBlank { null },
                                                 backstory = eBackstory.ifBlank { null }
                                             ) {
-                                                // nach erfolgreichem Speichern Overlay schließen
+
                                                 fullscreenCharacterId = null
                                             }
                                         },
@@ -443,7 +425,7 @@ fun CreateCharacterScreen(
                                     ) { Text("Cancel") }
                                 }
                             } else {
-                                // Nicht-Edit Modus: unten nur Close (mobile reachability)
+
                                 TextButton(
                                     onClick = { fullscreenCharacterId = null },
                                     modifier = Modifier.fillMaxWidth()
@@ -472,7 +454,6 @@ fun CreateCharacterScreen(
                     )
                 }
 
-                // Kampagnen-Picker
                 if (showCampaignPicker) {
                     CampaignPickerDialog(
                         isLoading = createVM.isLoading || createVM.isAssigning,
@@ -486,7 +467,7 @@ fun CreateCharacterScreen(
                                 campaignId = selected.id
                             ) {
                                 showCampaignPicker = false
-                                // UI aktualisiert sich über createVM.characters
+
                             }
                         }
                     )
@@ -496,7 +477,7 @@ fun CreateCharacterScreen(
     }
 }
 
-// --- Einfache Key/Value-Zeile für Details ---
+
 @Composable
 private fun InfoRow(
     label: String,
@@ -515,7 +496,7 @@ private fun InfoRow(
     Spacer(Modifier.height(8.dp))
 }
 
-// ---- Kleine Card für die Liste ----
+
 @Composable
 fun CharacterCardSmall(
     character: Character,
@@ -543,7 +524,7 @@ fun CharacterCardSmall(
     }
 }
 
-// ---- Kampagnen-Picker Dialog ----
+
 @Composable
 private fun CampaignPickerDialog(
     isLoading: Boolean,
