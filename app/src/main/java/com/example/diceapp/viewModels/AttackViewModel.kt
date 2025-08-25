@@ -10,9 +10,7 @@ data class Attack(
     val damageType: String
 )
 class AttackViewModel : ViewModel() {
-    val _attacks = mutableStateListOf(
-        Attack("Quarterstaff", toHit = 4, damageDice = "1d6", damageModifier = 2, damageType = "Bludgeoning")
-    )
+    val _attacks = mutableStateListOf<Attack>()
     val attacks: List<Attack> = _attacks
     fun addAttack(name: String, toHit: Int, damageDice: String, damageModifier: Int, damageType: String) {
         val newAttack = Attack(name, toHit, damageDice, damageModifier, damageType)

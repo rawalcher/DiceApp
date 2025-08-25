@@ -164,7 +164,7 @@ private fun RollsTab(chatViewModel: ChatViewModel) {
 private fun ActionsTab(navController: NavController) {
     val actionButtons = remember {
         listOf(
-            ActionButtonData("Stats", Icons.Default.Star, "View ability scores") {
+            ActionButtonData("Abilities", Icons.Default.Star, "View ability scores") {
                 navController.navigate("stats")
             },
             ActionButtonData("Saving Throws", Icons.Default.Warning, "Roll saving throws") {
@@ -173,7 +173,7 @@ private fun ActionsTab(navController: NavController) {
             ActionButtonData("Skills", Icons.AutoMirrored.Filled.List, "View and roll skills") {
                 navController.navigate("skills")
             },
-            ActionButtonData("Combat Stats", Icons.Default.Favorite, "HP, AC, and more") {
+            ActionButtonData("Core", Icons.Default.Favorite, "HP, AC, and more") {
                 navController.navigate("combat_stats")
             },
             ActionButtonData("Attacks", Icons.Default.PlayArrow, "Manage attacks") {
