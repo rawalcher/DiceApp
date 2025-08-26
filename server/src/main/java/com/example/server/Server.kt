@@ -276,6 +276,15 @@ fun initializeTables() {
         // sinnvolle Indizes
         st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_characters_user ON characters(user_id)")
         st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_characters_campaign ON characters(campaign_id)")
+
+        try {
+            st.executeUpdate(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_user_campaign_single_character " +
+                        "ON characters(user_id, campaign_id) WHERE campaign_id IS NOT NULL"
+            )
+        } catch (e: Exception) {
+            println("Warnung: Unique-Index nicht erstellt (evtl. Duplikate vorhanden): ${e.message}")
+        }
     }
 }
 
@@ -379,6 +388,24 @@ fun generateToken(userId: String, username: String): String =
         .withClaim("username", username)
         .withExpiresAt(Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
         .sign(Algorithm.HMAC256(secret))
+
+fun userHasCharacterInCampaign(
+    userId: String,
+    campaignId: String,
+    exceptCharacterId: Int? = null
+): Boolean {
+    val sql = if (exceptCharacterId != null) {
+        "SELECT 1 FROM characters WHERE user_id = ? AND campaign_id = ? AND id <> ? LIMIT 1"
+    } else {
+        "SELECT 1 FROM characters WHERE user_id = ? AND campaign_id = ? LIMIT 1"
+    }
+    db.prepareStatement(sql).use { ps ->
+        ps.setString(1, userId)
+        ps.setString(2, campaignId)
+        if (exceptCharacterId != null) ps.setInt(3, exceptCharacterId)
+        ps.executeQuery().use { rs -> return rs.next() }
+    }
+}
 
 // =============================
 //  Server
@@ -1073,23 +1100,46 @@ fun main() {
                     val characterIdStr = call.parameters["characterId"]
                     val campaignId = call.parameters["campaignId"]
                     if (characterIdStr == null || campaignId == null) {
-                        call.respondText("Character ID and Campaign ID required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                        call.respondText("Character ID and Campaign ID required",
+                            status = io.ktor.http.HttpStatusCode.BadRequest)
                         return@put
                     }
                     val characterId = characterIdStr.toInt()
-
-
-                    val owns = db.prepareStatement("SELECT 1 FROM characters WHERE id = ? AND user_id = ?").use { ps ->
+                    val owns = db.prepareStatement(
+                        "SELECT 1 FROM characters WHERE id = ? AND user_id = ?"
+                    ).use { ps ->
                         ps.setInt(1, characterId)
                         ps.setString(2, userId)
                         ps.executeQuery().use { rs -> rs.next() }
                     }
                     if (!owns) {
-                        call.respondText("Character not found or not owned by user", status = io.ktor.http.HttpStatusCode.NotFound)
+                        call.respondText("Character not found or not owned by user",
+                            status = io.ktor.http.HttpStatusCode.NotFound)
                         return@put
                     }
+
                     if (!isUserInCampaign(userId, campaignId)) {
-                        call.respondText("Not authorized to assign character to this campaign", status = io.ktor.http.HttpStatusCode.Forbidden)
+                        call.respondText("Not authorized to assign character to this campaign",
+                            status = io.ktor.http.HttpStatusCode.Forbidden)
+                        return@put
+                    }
+
+                    val currentCampaign: String? = db.prepareStatement(
+                        "SELECT campaign_id FROM characters WHERE id = ?"
+                    ).use { ps ->
+                        ps.setInt(1, characterId)
+                        ps.executeQuery().use { rs -> if (rs.next()) rs.getString("campaign_id") else null }
+                    }
+                    if (currentCampaign == campaignId) {
+                        call.respondText("Character is already assigned to this campaign")
+                        return@put
+                    }
+
+                    if (userHasCharacterInCampaign(userId, campaignId, exceptCharacterId = characterId)) {
+                        call.respondText(
+                            "Bitte verlasse erst mit deinem Charakter die Kampagne.",
+                            status = io.ktor.http.HttpStatusCode.Conflict
+                        )
                         return@put
                     }
 
@@ -1121,6 +1171,7 @@ fun main() {
                     call.respondText("Character unassigned from campaign")
                 }
             }
+
         }
     }.start(wait = true)
 }

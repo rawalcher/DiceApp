@@ -24,10 +24,7 @@ private const val TAG = "CreateCharacterVM"
 class CreateCharacterViewModel : ViewModel() {
     private val baseUrl = "http://10.0.2.2:8080"
     private val client = OkHttpClient()
-    private val json = Json {
-        ignoreUnknownKeys = true
-
-    }
+    private val json = Json { ignoreUnknownKeys = true }
 
     var campaigns by mutableStateOf<List<Campaign>>(emptyList())
         private set
@@ -44,7 +41,6 @@ class CreateCharacterViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-
     private fun getToken(context: Context): String? {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getString(KEY_AUTH_TOKEN, null)
@@ -53,27 +49,30 @@ class CreateCharacterViewModel : ViewModel() {
     private fun abilityValue(vm: CharacterViewModel, name: String): Int =
         vm.abilities.firstOrNull { it.name == name }?.value ?: 10
 
-
-
     fun loadCharacters(context: Context) {
         viewModelScope.launch {
             isLoading = true
             errorMessage = null
             try {
                 val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
-                val request = Request.Builder()
-                    .url("$baseUrl/characters")
-                    .header("Authorization", "Bearer $token")
-                    .build()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    response.body?.string()?.let { body ->
-                        characters = json.decodeFromString(body)
-                        Log.d(TAG, "Loaded ${characters.size} characters")
+
+                val parsed: List<Character> = withContext(Dispatchers.IO) {
+                    val request = Request.Builder()
+                        .url("$baseUrl/characters")
+                        .header("Authorization", "Bearer $token")
+                        .build()
+
+                    client.newCall(request).execute().use { resp ->
+                        if (!resp.isSuccessful) {
+                            throw IllegalStateException("Failed to load characters: ${resp.code}")
+                        }
+                        val body = resp.body?.string() ?: error("Empty body")
+                        json.decodeFromString<List<Character>>(body)
                     }
-                } else {
-                    errorMessage = "Failed to load characters: ${response.code}"
                 }
+
+                characters = parsed
+                Log.d(TAG, "Loaded ${characters.size} characters")
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.localizedMessage}"
                 Log.e(TAG, "Error loading characters", e)
@@ -88,20 +87,26 @@ class CreateCharacterViewModel : ViewModel() {
             errorMessage = null
             try {
                 val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
-                val request = Request.Builder()
-                    .url("$baseUrl/campaigns")
-                    .header("Authorization", "Bearer $token")
-                    .build()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    response.body?.string()?.let { body ->
-                        campaigns = json.decodeFromString(body)
+
+                val parsed: List<Campaign> = withContext(Dispatchers.IO) {
+                    val request = Request.Builder()
+                        .url("$baseUrl/campaigns")
+                        .header("Authorization", "Bearer $token")
+                        .build()
+
+                    client.newCall(request).execute().use { resp ->
+                        if (!resp.isSuccessful) {
+                            throw IllegalStateException("Failed to load campaigns: ${resp.code}")
+                        }
+                        val body = resp.body?.string() ?: error("Empty body")
+                        json.decodeFromString<List<Campaign>>(body)
                     }
-                } else {
-                    errorMessage = "Failed to load campaigns: ${response.code}"
                 }
+
+                campaigns = parsed
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.localizedMessage}"
+                Log.e(TAG, "Error loading campaigns", e)
             }
         }
     }
@@ -117,20 +122,33 @@ class CreateCharacterViewModel : ViewModel() {
             errorMessage = null
             try {
                 val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
-                val request = Request.Builder()
-                    .url("$baseUrl/characters/$characterId/assign/$campaignId")
-                    .header("Authorization", "Bearer $token")
-                    .put("".toRequestBody("application/json; charset=utf-8".toMediaType()))
-                    .build()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
+
+                val (success, code) = withContext(Dispatchers.IO) {
+                    val request = Request.Builder()
+                        .url("$baseUrl/characters/$characterId/assign/$campaignId")
+                        .header("Authorization", "Bearer $token")
+                        .put("".toRequestBody("application/json; charset=utf-8".toMediaType()))
+                        .build()
+
+                    client.newCall(request).execute().use { resp ->
+                        resp.isSuccessful to resp.code
+                    }
+                }
+
+                if (success) {
                     loadCharacters(context)
                     onSuccess()
                 } else {
-                    errorMessage = "Failed to assign: ${response.code}"
+                    errorMessage = when (code) {
+                        409 -> "Bitte verlasse erst mit deinem Charakter die Kampagne."
+                        403 -> "Keine Berechtigung für diese Kampagne."
+                        404 -> "Charakter nicht gefunden."
+                        else -> "Failed to assign: $code"
+                    }
                 }
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.localizedMessage}"
+                Log.e(TAG, "Error assigning character", e)
             } finally {
                 isAssigning = false
             }
@@ -147,20 +165,28 @@ class CreateCharacterViewModel : ViewModel() {
             errorMessage = null
             try {
                 val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
-                val request = Request.Builder()
-                    .url("$baseUrl/characters/$characterId/unassign")
-                    .header("Authorization", "Bearer $token")
-                    .put("".toRequestBody("application/json; charset=utf-8".toMediaType()))
-                    .build()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
+
+                val (success, code) = withContext(Dispatchers.IO) {
+                    val request = Request.Builder()
+                        .url("$baseUrl/characters/$characterId/unassign")
+                        .header("Authorization", "Bearer $token")
+                        .put("".toRequestBody("application/json; charset=utf-8".toMediaType()))
+                        .build()
+
+                    client.newCall(request).execute().use { resp ->
+                        resp.isSuccessful to resp.code
+                    }
+                }
+
+                if (success) {
                     loadCharacters(context)
                     onSuccess()
                 } else {
-                    errorMessage = "Failed to unassign: ${response.code}"
+                    errorMessage = "Failed to unassign: $code"
                 }
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.localizedMessage}"
+                Log.e(TAG, "Error unassigning character", e)
             } finally {
                 isLoading = false
             }
@@ -173,26 +199,33 @@ class CreateCharacterViewModel : ViewModel() {
             errorMessage = null
             try {
                 val token = getToken(context) ?: run { errorMessage = "Not logged in"; return@launch }
-                val request = Request.Builder()
-                    .url("$baseUrl/characters/$characterId")
-                    .header("Authorization", "Bearer $token")
-                    .delete()
-                    .build()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
+
+                val (success, code) = withContext(Dispatchers.IO) {
+                    val request = Request.Builder()
+                        .url("$baseUrl/characters/$characterId")
+                        .header("Authorization", "Bearer $token")
+                        .delete()
+                        .build()
+
+                    client.newCall(request).execute().use { resp ->
+                        resp.isSuccessful to resp.code
+                    }
+                }
+
+                if (success) {
                     loadCharacters(context)
                     onSuccess()
                 } else {
-                    errorMessage = "Failed to delete character: ${response.code}"
+                    errorMessage = "Failed to delete character: $code"
                 }
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.localizedMessage}"
+                Log.e(TAG, "Error deleting character", e)
             } finally {
                 isLoading = false
             }
         }
     }
-
 
     fun createCharacter(
         context: Context,
@@ -222,14 +255,12 @@ class CreateCharacterViewModel : ViewModel() {
                     classDescription = classDescription,
                     appearanceDescription = appearanceDescription,
                     backstory = backstory,
-
                     strength = abilityValue(source, "Strength"),
                     dexterity = abilityValue(source, "Dexterity"),
                     constitution = abilityValue(source, "Constitution"),
                     intelligence = abilityValue(source, "Intelligence"),
                     wisdom = abilityValue(source, "Wisdom"),
                     charisma = abilityValue(source, "Charisma"),
-
                     armorClass = source.armorClass,
                     maxHp = source.maxHP,
                     currentHp = source.currentHP,
@@ -243,20 +274,25 @@ class CreateCharacterViewModel : ViewModel() {
                 val requestBody = json.encodeToString(CreateCharacterRequest.serializer(), createRequest)
                     .toRequestBody("application/json; charset=utf-8".toMediaType())
 
-                val request = Request.Builder()
-                    .url("$baseUrl/characters")
-                    .header("Authorization", "Bearer $token")
-                    .post(requestBody)
-                    .build()
+                val (success, code) = withContext(Dispatchers.IO) {
+                    val request = Request.Builder()
+                        .url("$baseUrl/characters")
+                        .header("Authorization", "Bearer $token")
+                        .post(requestBody)
+                        .build()
 
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
+                    client.newCall(request).execute().use { resp ->
+                        resp.isSuccessful to resp.code
+                    }
+                }
+
+                if (success) {
                     Log.d(TAG, "Character created successfully")
                     loadCharacters(context)
                     onSuccess()
                 } else {
-                    errorMessage = "Failed to create character: ${response.code}"
-                    Log.e(TAG, "Failed to create character: ${response.code} - ${response.message}")
+                    errorMessage = "Failed to create character: $code"
+                    Log.e(TAG, "Failed to create character: $code")
                 }
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.localizedMessage}"
@@ -266,7 +302,6 @@ class CreateCharacterViewModel : ViewModel() {
             }
         }
     }
-
 
     fun updateCharacter(
         context: Context,
@@ -297,14 +332,12 @@ class CreateCharacterViewModel : ViewModel() {
                     classDescription = classDescription,
                     appearanceDescription = appearanceDescription,
                     backstory = backstory,
-
                     strength = abilityValue(source, "Strength"),
                     dexterity = abilityValue(source, "Dexterity"),
                     constitution = abilityValue(source, "Constitution"),
                     intelligence = abilityValue(source, "Intelligence"),
                     wisdom = abilityValue(source, "Wisdom"),
                     charisma = abilityValue(source, "Charisma"),
-
                     armorClass = source.armorClass,
                     maxHp = source.maxHP,
                     currentHp = source.currentHP,
@@ -318,19 +351,22 @@ class CreateCharacterViewModel : ViewModel() {
                 val requestBody = json.encodeToString(UpdateCharacterRequest.serializer(), body)
                     .toRequestBody("application/json; charset=utf-8".toMediaType())
 
-                val req = Request.Builder()
-                    .url("$baseUrl/characters/$characterId")
-                    .header("Authorization", "Bearer $token")
-                    .put(requestBody)
-                    .build()
+                val updated: Character = withContext(Dispatchers.IO) {
+                    val req = Request.Builder()
+                        .url("$baseUrl/characters/$characterId")
+                        .header("Authorization", "Bearer $token")
+                        .put(requestBody)
+                        .build()
 
-                val resp = withContext(Dispatchers.IO) { client.newCall(req).execute() }
-                if (!resp.isSuccessful) {
-                    errorMessage = "Failed to update character: ${resp.code}"
-                    return@launch
+                    client.newCall(req).execute().use { resp ->
+                        if (!resp.isSuccessful) {
+                            throw IllegalStateException("Failed to update character: ${resp.code}")
+                        }
+                        val bodyStr = resp.body?.string() ?: error("Empty body")
+                        json.decodeFromString<Character>(bodyStr)
+                    }
                 }
 
-                val updated: Character = json.decodeFromString(resp.body?.string().orEmpty())
                 loadCharacters(context)
                 onSuccess(updated)
             } catch (e: Exception) {
@@ -344,6 +380,7 @@ class CreateCharacterViewModel : ViewModel() {
 }
 
 
+/* --------- DTOs / Models (Client) --------- */
 
 @Serializable
 data class Character(
@@ -358,7 +395,6 @@ data class Character(
     val raceDescription: String? = null,
     val campaignId: String? = null,
     val campaignName: String? = null
-
 )
 
 @Serializable
@@ -373,7 +409,6 @@ data class Campaign(
     val isJoined: Boolean
 )
 
-
 @Serializable
 data class CreateCharacterRequest(
     val name: String,
@@ -384,7 +419,6 @@ data class CreateCharacterRequest(
     val classDescription: String? = null,
     val appearanceDescription: String? = null,
     val backstory: String? = null,
-
     val strength: Int,
     val dexterity: Int,
     val constitution: Int,
@@ -411,7 +445,6 @@ data class UpdateCharacterRequest(
     val classDescription: String? = null,
     val appearanceDescription: String? = null,
     val backstory: String? = null,
-
     val strength: Int,
     val dexterity: Int,
     val constitution: Int,

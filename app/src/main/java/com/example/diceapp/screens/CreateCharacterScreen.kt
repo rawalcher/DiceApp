@@ -16,7 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.lifecycle.viewmodel.compose.viewModel // wenn du Hilt nutzt, ersetze durch hiltViewModel()
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.diceapp.viewModels.Character
 import com.example.diceapp.viewModels.CreateCharacterViewModel
 import com.example.diceapp.viewModels.CharacterViewModel
@@ -48,7 +48,6 @@ fun CreateCharacterScreen(
 
     Scaffold { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
-
 
             LazyColumn(
                 modifier = Modifier
@@ -121,7 +120,7 @@ fun CreateCharacterScreen(
                             } else {
                                 createVM.createCharacter(
                                     context = context,
-                                    source = characterVM, // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                    source = characterVM,
                                     name = name,
                                     charClass = charClass,
                                     level = level.toInt(),
@@ -162,11 +161,9 @@ fun CreateCharacterScreen(
                     }
                 }
 
-
                 item {
                     Text("Existing Characters", style = MaterialTheme.typography.headlineSmall)
                 }
-
 
                 if (createVM.isLoading) {
                     item { CircularProgressIndicator() }
@@ -182,13 +179,9 @@ fun CreateCharacterScreen(
                 }
             }
 
-
             fullscreenCharacter?.let { character ->
                 var isEditing by rememberSaveable(fullscreenCharacterId) { mutableStateOf(false) }
-
-
                 val scrollState = rememberSaveable(fullscreenCharacterId, saver = ScrollState.Saver) { ScrollState(0) }
-
 
                 var eName by rememberSaveable(fullscreenCharacterId) { mutableStateOf(character.name) }
                 var eClass by rememberSaveable(fullscreenCharacterId) { mutableStateOf(character.charClass) }
@@ -331,7 +324,6 @@ fun CreateCharacterScreen(
 
                                     HorizontalDivider()
 
-
                                     val isAssigned = (character.campaignId != null) || (character.campaignName != null)
                                     if (!isAssigned) {
                                         Button(
@@ -366,7 +358,6 @@ fun CreateCharacterScreen(
                                         ) { Text("Choose Another Campaign") }
                                     }
 
-
                                     Spacer(Modifier.height(8.dp))
                                     Button(
                                         onClick = {
@@ -385,7 +376,6 @@ fun CreateCharacterScreen(
                                     ) { Text("Delete Character") }
                                 }
                             }
-
 
                             if (isEditing) {
                                 Column(
@@ -409,7 +399,6 @@ fun CreateCharacterScreen(
                                                 appearanceDescription = eAppear.ifBlank { null },
                                                 backstory = eBackstory.ifBlank { null }
                                             ) {
-
                                                 fullscreenCharacterId = null
                                             }
                                         },
@@ -425,7 +414,6 @@ fun CreateCharacterScreen(
                                     ) { Text("Cancel") }
                                 }
                             } else {
-
                                 TextButton(
                                     onClick = { fullscreenCharacterId = null },
                                     modifier = Modifier.fillMaxWidth()
@@ -457,6 +445,7 @@ fun CreateCharacterScreen(
                 if (showCampaignPicker) {
                     CampaignPickerDialog(
                         isLoading = createVM.isLoading || createVM.isAssigning,
+                        error = createVM.errorMessage, // <-- Fehler im Dialog anzeigen
                         campaigns = createVM.campaigns,
                         onClose = { showCampaignPicker = false },
                         onSelect = { selected ->
@@ -467,7 +456,6 @@ fun CreateCharacterScreen(
                                 campaignId = selected.id
                             ) {
                                 showCampaignPicker = false
-
                             }
                         }
                     )
@@ -476,7 +464,6 @@ fun CreateCharacterScreen(
         }
     }
 }
-
 
 @Composable
 private fun InfoRow(
@@ -495,7 +482,6 @@ private fun InfoRow(
     }
     Spacer(Modifier.height(8.dp))
 }
-
 
 @Composable
 fun CharacterCardSmall(
@@ -524,10 +510,10 @@ fun CharacterCardSmall(
     }
 }
 
-
 @Composable
 private fun CampaignPickerDialog(
     isLoading: Boolean,
+    error: String?,
     campaigns: List<com.example.diceapp.viewModels.Campaign>,
     onClose: () -> Unit,
     onSelect: (campaign: com.example.diceapp.viewModels.Campaign) -> Unit
@@ -536,65 +522,76 @@ private fun CampaignPickerDialog(
         onDismissRequest = onClose,
         title = { Text("Kampagne auswählen") },
         text = {
-            if (isLoading) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    CircularProgressIndicator()
-                }
-            } else if (campaigns.isEmpty()) {
-                Text("Keine Kampagnen gefunden.")
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .heightIn(max = 420.dp)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(campaigns) { camp ->
-                        val isFull = camp.playerCount >= camp.maxPlayers
-                        val canAssign = camp.isJoined && !isFull
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (isLoading) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else if (campaigns.isEmpty()) {
+                    Text("Keine Kampagnen gefunden.")
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .heightIn(max = 420.dp)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(campaigns) { camp ->
+                            val isFull = camp.playerCount >= camp.maxPlayers
+                            val canAssign = camp.isJoined && !isFull
 
-                        ElevatedCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = canAssign) { onSelect(camp) },
-                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
-                        ) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(
-                                    camp.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    camp.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    "Spieler: ${camp.playerCount}/${camp.maxPlayers}",
-                                    style = MaterialTheme.typography.labelMedium
-                                )
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = canAssign && !isLoading) { onSelect(camp) },
+                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text(
+                                        camp.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        camp.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        "Spieler: ${camp.playerCount}/${camp.maxPlayers}",
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
 
-                                if (!camp.isJoined) {
-                                    Text(
-                                        "Du bist dieser Kampagne nicht beigetreten",
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                } else if (isFull) {
-                                    Text(
-                                        "Kampagne ist voll",
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
+                                    if (!camp.isJoined) {
+                                        Text(
+                                            "Du bist dieser Kampagne nicht beigetreten",
+                                            color = MaterialTheme.colorScheme.error,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    } else if (isFull) {
+                                        Text(
+                                            "Kampagne ist voll",
+                                            color = MaterialTheme.colorScheme.error,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+                }
+
+                if (!error.isNullOrBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
         },
