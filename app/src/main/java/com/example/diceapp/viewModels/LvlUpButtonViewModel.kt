@@ -71,14 +71,14 @@ class LvlUpButtonViewModel : ViewModel() {
 
                 val resp = withContext(Dispatchers.IO) { client.newCall(req).execute() }
                 if (!resp.isSuccessful) {
-                    val msg = "Level-Up fehlgeschlagen: ${resp.code}"
+                    val msg = "Level up failed: ${resp.code}"
                     errorMessage = msg
                     onError(msg)
                     return@launch
                 }
 
                 val result = json.decodeFromString<LevelUpResponse>(resp.body?.string().orEmpty())
-                loadCharactersForCampaign(context, campaignId) // neu laden
+                loadCharactersForCampaign(context, campaignId)
                 onResult(result.updated)
             } catch (t: Throwable) {
                 val msg = "Error: ${t.localizedMessage}"

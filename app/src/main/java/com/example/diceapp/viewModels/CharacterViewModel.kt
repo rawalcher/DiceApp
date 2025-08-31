@@ -90,6 +90,18 @@ class CharacterViewModel : ViewModel() {
     val proficiencyBonus: Int
         get() = currentCharacterData?.proficiencyBonus ?: 2
 
+    var draftStr by mutableStateOf(10)
+    var draftDex by mutableStateOf(10)
+    var draftCon by mutableStateOf(10)
+    var draftInt by mutableStateOf(10)
+    var draftWis by mutableStateOf(10)
+    var draftCha by mutableStateOf(10)
+
+    fun resetDraftAbilities() {
+        draftStr = 10; draftDex = 10; draftCon = 10
+        draftInt = 10; draftWis = 10; draftCha = 10
+    }
+
     val abilities: List<Ability>
         get() {
             val data = currentCharacterData ?: return defaultAbilities()
@@ -242,7 +254,7 @@ class CharacterViewModel : ViewModel() {
     }
 
     private fun defaultAbilities() = listOf(
-        Ability("Strength", 55), //mit 20 getestet
+        Ability("Strength", 10),
         Ability("Dexterity", 10),
         Ability("Constitution", 10),
         Ability("Intelligence", 10),

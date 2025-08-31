@@ -14,7 +14,7 @@ import com.example.diceapp.ui.theme.DiceAppTheme
 import com.example.diceapp.viewModels.DiceRollViewModel
 import com.example.diceapp.viewModels.CampaignViewModel
 import com.example.diceapp.viewModels.AttackViewModel
-import com.example.diceapp.viewModels.CreateCharacterViewModel
+import com.example.diceapp.viewModels.ManageCharacterViewModel
 import com.example.diceapp.viewModels.SpellViewModel
 import com.example.diceapp.viewModels.ResourceViewModel
 import com.example.diceapp.viewModels.ModifierViewModel
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
     private val spellViewModel: SpellViewModel by viewModels()
     private val resourceViewModel: ResourceViewModel by viewModels()
     private val modifierViewModel: ModifierViewModel by viewModels()
-    private val createCharacterViewModel: CreateCharacterViewModel by viewModels()
+    private val manageCharacterViewModel: ManageCharacterViewModel by viewModels()
     private val lvlUpButtonViewModel: LvlUpButtonViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                         spellViewModel = spellViewModel,
                         resourceViewModel = resourceViewModel,
                         modifierViewModel = modifierViewModel,
-                        createCharacterViewModel = createCharacterViewModel,
+                        manageCharacterViewModel = manageCharacterViewModel,
                         lvlUpButtonViewModel = lvlUpButtonViewModel
                     )
                 }

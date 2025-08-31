@@ -42,8 +42,9 @@ import com.example.diceapp.screens.AddResourceScreen
 import com.example.diceapp.viewModels.ResourceViewModel
 import com.example.diceapp.screens.AdditionalModifiersScreen
 import com.example.diceapp.screens.AddModifierScreen
+import com.example.diceapp.screens.CharactersScreen
 import com.example.diceapp.screens.LvlUpButtonScreen
-import com.example.diceapp.viewModels.CreateCharacterViewModel
+import com.example.diceapp.viewModels.ManageCharacterViewModel
 import com.example.diceapp.viewModels.LvlUpButtonViewModel
 import com.example.diceapp.viewModels.ModifierViewModel
 
@@ -59,7 +60,7 @@ fun AppNavHost(
     spellViewModel: SpellViewModel,
     resourceViewModel: ResourceViewModel,
     modifierViewModel: ModifierViewModel,
-    createCharacterViewModel: CreateCharacterViewModel,
+    manageCharacterViewModel: ManageCharacterViewModel,
     lvlUpButtonViewModel: LvlUpButtonViewModel
 ) {
     Scaffold { padding ->
@@ -119,7 +120,14 @@ fun AppNavHost(
                     composable("create_character") {
                         CreateCharacterScreen(
                             navController = navController,
-                            createVM = createCharacterViewModel
+                            createVM = manageCharacterViewModel
+                        )
+                    }
+                    composable("characters") {
+                        CharactersScreen(
+                            navController = navController,
+                            createVM = manageCharacterViewModel,
+                            characterVM = characterViewModel
                         )
                     }
 

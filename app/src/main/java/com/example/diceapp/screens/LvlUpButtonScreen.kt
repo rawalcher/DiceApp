@@ -89,16 +89,15 @@ fun LvlUpButtonScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Select campaign
             ExposedDropdownMenuBox(
                 expanded = menuExpanded,
                 onExpandedChange = { menuExpanded = it }
             ) {
                 OutlinedTextField(
                     readOnly = true,
-                    value = selected?.name ?: "Kampagne wählen",
+                    value = selected?.name ?: "Select campaign",
                     onValueChange = {},
-                    label = { Text("Deine Kampagnen") },
+                    label = { Text("Your campaigns") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuExpanded) },
                     modifier = Modifier
                         .menuAnchor()
@@ -124,14 +123,14 @@ fun LvlUpButtonScreen(
                 Text(error, color = MaterialTheme.colorScheme.error)
             }
 
-            // Header + button
+            // Header + Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = selected?.let { "Spieler in: ${it.name}" } ?: "Keine Kampagne ausgewählt",
+                    text = selected?.let { "Players in: ${it.name}" } ?: "No campaign selected",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
@@ -146,9 +145,9 @@ fun LvlUpButtonScreen(
                                 scope.launch {
                                     snackbarHostState.showSnackbar(
                                         if (updated > 0)
-                                            "Level-Up vergeben: $updated Charakter(e)."
+                                            "Level up granted: $updated character(s)."
                                         else
-                                            "Keine Charaktere in dieser Kampagne zum Leveln."
+                                            "There are no characters in this campaign to level up."
                                     )
                                 }
                             },
@@ -165,7 +164,6 @@ fun LvlUpButtonScreen(
                 }
             }
 
-            // List of characters
             ElevatedCard(Modifier.fillMaxSize()) {
                 if (isLoading) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -173,11 +171,11 @@ fun LvlUpButtonScreen(
                     }
                 } else if (selected == null) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Wähle oben eine Kampagne aus.")
+                        Text("Select a campaign above.")
                     }
                 } else if (characters.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Keine Spieler/Charaktere in dieser Kampagne.")
+                        Text("No players/characters in this campaign.")
                     }
                 } else {
                     LazyColumn(
@@ -207,8 +205,8 @@ private fun CharacterRow(c: CampaignCharacter) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(c.name, style = MaterialTheme.typography.titleMedium)
-                Text("Klasse: ${c.charClass}", style = MaterialTheme.typography.bodySmall)
-                c.raceName?.let { Text("Rasse: $it", style = MaterialTheme.typography.bodySmall) }
+                Text("Class: ${c.charClass}", style = MaterialTheme.typography.bodySmall)
+                c.raceName?.let { Text("Race: $it", style = MaterialTheme.typography.bodySmall) }
             }
             AssistChip(
                 onClick = {},

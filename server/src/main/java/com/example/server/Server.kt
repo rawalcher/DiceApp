@@ -111,32 +111,6 @@ data class Character(
 )
 
 @Serializable
-data class CreateCharacterRequest(
-    val name: String,
-    val charClass: String,
-    val level: Int,
-    val raceName: String? = null,
-    val raceDescription: String? = null,
-    val classDescription: String? = null,
-    val appearanceDescription: String? = null,
-    val backstory: String? = null,
-    val strength: Int,
-    val dexterity: Int,
-    val constitution: Int,
-    val intelligence: Int,
-    val wisdom: Int,
-    val charisma: Int,
-    val armorClass: Int,
-    val maxHp: Int,
-    val currentHp: Int,
-    val speed: Int,
-    val proficiencyBonus: Int,
-    val hitDiceTotal: Int,
-    val hitDiceRemaining: Int,
-    val hitDieType: Int
-)
-
-@Serializable
 data class UpdateCharacterRequest(
     val name: String,
     val charClass: String,
@@ -836,7 +810,7 @@ fun main() {
                 post("/characters") {
                     val principal = call.principal<JWTPrincipal>()!!
                     val userId = principal.payload.getClaim("userId").asString()
-                    val body = call.receive<CreateCharacterRequest>()
+                    val body = call.receive<UpdateCharacterRequest>()
 
                     val sql = """
                         INSERT INTO characters (

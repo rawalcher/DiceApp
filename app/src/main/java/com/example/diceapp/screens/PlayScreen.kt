@@ -188,6 +188,9 @@ private fun ActionsTab(navController: NavController) {
             ActionButtonData("Modifiers", Icons.Default.Add, "Additional modifiers") {
                 navController.navigate("modifiers")
             },
+            ActionButtonData("Characters", Icons.Default.Person, "Manage characters") {
+                navController.navigate("characters")
+            },
             ActionButtonData("DM Level Up", Icons.Default.KeyboardArrowUp, "Level up players") {
                 navController.navigate("dm_level_up")
             }
