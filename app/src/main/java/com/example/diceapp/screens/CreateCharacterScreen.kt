@@ -13,6 +13,7 @@ import androidx.navigation.NavController
 import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ManageCharacterViewModel
 
+/** Character creation form: local state + ability drafts; save via ManageCharacterViewModel. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateCharacterScreen(
@@ -21,7 +22,7 @@ fun CreateCharacterScreen(
 ) {
     val context = LocalContext.current
     val characterVM: CharacterViewModel = viewModel()
-
+    //form state
     var name by rememberSaveable { mutableStateOf("") }
     var charClass by rememberSaveable { mutableStateOf("") }
     var level by rememberSaveable { mutableStateOf("") }
@@ -39,6 +40,7 @@ fun CreateCharacterScreen(
             )
         }
     ) { padding ->
+        // content
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
@@ -46,6 +48,7 @@ fun CreateCharacterScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // — Base fields
             item {
                 OutlinedTextField(
                     value = name, onValueChange = { name = it },
@@ -93,7 +96,7 @@ fun CreateCharacterScreen(
                         .heightIn(min = 120.dp),
                     singleLine = false
                 )
-
+                // — Abilities (drafts from CharacterViewModel)
                 Text("Abilities", style = MaterialTheme.typography.titleMedium)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -154,7 +157,7 @@ fun CreateCharacterScreen(
                     )
                 }
             }
-
+            // — Actions
             item {
                 Button(
                     onClick = {

@@ -54,6 +54,7 @@ import com.example.diceapp.viewModels.Character
 import com.example.diceapp.viewModels.CharacterViewModel
 import com.example.diceapp.viewModels.ManageCharacterViewModel
 
+/** Character list with compact cards; tap opens full-screen detail/editor overlay. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharactersScreen(
@@ -89,6 +90,7 @@ fun CharactersScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // — List
             if (createVM.isLoading && createVM.characters.isEmpty()) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             } else {
@@ -109,7 +111,7 @@ fun CharactersScreen(
                     item { Spacer(Modifier.height(32.dp)) }
                 }
             }
-
+            // — Overlay
             fullscreenCharacter?.let { character ->
                 CharacterDetailCard(
                     character = character,
@@ -125,7 +127,7 @@ fun CharactersScreen(
         }
     }
 }
-
+/** Compact list card (tap → open overlay). */
 @Composable
 fun CharacterCardSmall(
     character: Character,
@@ -151,7 +153,7 @@ fun CharacterCardSmall(
         }
     }
 }
-
+/** Full-screen character detail/editor; handles read/edit, campaign join/leave, save/delete. */
 @Composable
 private fun CharacterDetailCard(
     character: Character,
@@ -167,7 +169,7 @@ private fun CharacterDetailCard(
     val scrollState = rememberScrollState()
 
     var isEditing by rememberSaveable(character.id) { mutableStateOf(false) }
-
+    // editor fields
     var eName by rememberSaveable(character.id) { mutableStateOf(character.name) }
     var eClass by rememberSaveable(character.id) { mutableStateOf(character.charClass) }
     var eLevel by rememberSaveable(character.id) { mutableStateOf(character.level.toString()) }
@@ -221,12 +223,13 @@ private fun CharacterDetailCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    // Header
                     Text(
                         if (isEditing) "Edit Character" else "Character Details",
                         style = MaterialTheme.typography.titleLarge
                     )
                 }
-
+                // Content
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -314,7 +317,7 @@ private fun CharacterDetailCard(
                         )
 
                         HorizontalDivider()
-
+                        // Campaign actions (join/leave/switch)
                         val isAssigned = (character.campaignId != null) || (character.campaignName != null)
                         if (!isAssigned) {
                             Button(
@@ -347,6 +350,8 @@ private fun CharacterDetailCard(
                         Spacer(Modifier.height(8.dp))
                         Button(
                             onClick = {
+                                // Enter edit mode and seed ability drafts from current character
+                                characterVM.draftStr = character.strength
                                 characterVM.draftStr = character.strength
                                 characterVM.draftDex = character.dexterity
                                 characterVM.draftCon = character.constitution
@@ -368,7 +373,7 @@ private fun CharacterDetailCard(
                         ) { Text("Delete Character") }
                     }
                 }
-
+                // Card actions: Save/Cancel in edit; Close in read-only
                 if (isEditing) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         Button(
